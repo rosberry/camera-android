@@ -3,7 +3,6 @@ package com.rosberry.camera
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Matrix
-import android.graphics.Point
 import android.graphics.RectF
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraAccessException
@@ -20,13 +19,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import com.rosberry.camera.databinding.ActivityMainBinding
-import java.lang.Long.signum
-import java.util.Collections
+import kotlin.math.abs
 import kotlin.math.max
 
 private const val REQUEST_CODE_CAMERA = 100
-private const val MAX_WIDTH = 1920
-private const val MAX_HEIGHT = 1080
 
 class MainActivity : AppCompatActivity() {
 
@@ -127,17 +123,11 @@ class MainActivity : AppCompatActivity() {
                     .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
                     ?.getOutputSizes(SurfaceTexture::class.java) ?: continue
                 val sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)
-                val displaySize = Point().apply { windowManager.defaultDisplay.getSize(this) }
                 val isRotatedImage = isRotatedImage(sensorOrientation)
-                val previewWidth = if (isRotatedImage) height else width
-                val previewHeight = if (isRotatedImage) width else height
-                var maxWidth = if (isRotatedImage) displaySize.y else displaySize.x
-                var maxHeight = if (isRotatedImage) displaySize.x else displaySize.y
+                val viewWidth = if (isRotatedImage) height else width
+                val viewHeight = if (isRotatedImage) width else height
 
-                if (maxWidth > MAX_WIDTH) maxWidth = MAX_WIDTH
-                if (maxHeight > MAX_HEIGHT) maxHeight = MAX_HEIGHT
-
-                previewSize = getPreviewSize(sizes, previewWidth, previewHeight, maxWidth, maxHeight)
+                previewSize = getPreviewSize(sizes, viewWidth, viewHeight)
 
                 this.cameraId = cameraId
 
@@ -150,24 +140,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getPreviewSize(sizes: Array<Size>, previewWidth: Int, previewHeight: Int, maxWidth: Int, maxHeight: Int): Size {
-        val overSize = arrayListOf<Size>()
-        val underSize = arrayListOf<Size>()
-        val comparator = SizeComparator()
+    private fun getPreviewSize(sizes: Array<Size>, viewWidth: Int, viewHeight: Int): Size {
+        val viewAspect = viewWidth / viewHeight.toFloat()
+        var bestSize = sizes[0]
+        var bestAspectDif = abs(bestSize.aspect - viewAspect)
+        var bestDif = abs(sizes[0].width - viewWidth) + abs(sizes[0].height - viewHeight)
 
         for (size in sizes) {
-            if (size.width <= maxWidth && size.height <= maxHeight) {
-                when (size.width >= previewWidth && size.height >= previewHeight) {
-                    true -> overSize.add(size)
-                    false -> underSize.add(size)
+            if (bestAspectDif == 0f && bestDif == 0) break
+
+            val aspectDif = abs(size.aspect - viewAspect)
+            if (aspectDif <= bestAspectDif) {
+                val dif = abs(size.width - viewWidth) + abs(size.height - viewHeight)
+                if (dif < bestDif) {
+                    bestSize = size
+                    bestAspectDif = aspectDif
+                    bestDif = dif
                 }
             }
         }
-        return when {
-            overSize.isNotEmpty() -> Collections.min(overSize, comparator)
-            underSize.isNotEmpty() -> Collections.max(underSize, comparator)
-            else -> sizes[0]
-        }
+        return bestSize
     }
 
     private fun isRotatedImage(sensorOrientation: Int?): Boolean {
@@ -187,23 +179,25 @@ class MainActivity : AppCompatActivity() {
             val centerX = width / 2f
             val centerY = height / 2f
 
-            val scale = max(width.toFloat() / previewSize.width, height.toFloat() / previewSize.height)
-            val viewRect = RectF(0f, 0f, width.toFloat(), height.toFloat())
-            val bufferRect = RectF(0f, 0f, previewSize.height.toFloat(), previewSize.width.toFloat())
-                .apply { offset(centerX - centerX(), centerY - centerY()) }
-
-            setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL)
-            postScale(scale, scale, centerX, centerY)
-
             when (rotation) {
                 Surface.ROTATION_180 -> postRotate(180f, centerX, centerY)
                 Surface.ROTATION_90, Surface.ROTATION_270 -> {
+                    val viewRect = RectF(0f, 0f, width.toFloat(), height.toFloat())
+                    val scale = max(width.toFloat() / previewSize.width, height.toFloat() / previewSize.height)
+                    val bufferRect = RectF(0f, 0f, previewSize.height.toFloat(), previewSize.width.toFloat())
+                        .apply { offset(centerX - centerX(), centerY - centerY()) }
+
+                    setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL)
+                    postScale(scale, scale, centerX, centerY)
                     postRotate(90f * (rotation - 2), centerX, centerY)
                 }
             }
             textureView.setTransform(this)
         }
     }
+
+    private val Size.aspect: Float
+        get() = width / height.toFloat()
 
     private inner class CameraStateCallback : CameraDevice.StateCallback() {
 
@@ -252,10 +246,5 @@ class MainActivity : AppCompatActivity() {
         override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean = true
 
         override fun onSurfaceTextureUpdated(surface: SurfaceTexture) = Unit
-    }
-
-    private class SizeComparator : Comparator<Size> {
-
-        override fun compare(o1: Size, o2: Size): Int = signum(o1.width.toLong() * o1.height - o2.width.toLong() * o2.height)
     }
 }

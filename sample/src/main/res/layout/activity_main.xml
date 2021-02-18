@@ -1,26 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/darker_gray">
+    tools:ignore="ContentDescription">
 
-    <TextureView android:id="@+id/textureView"
+    <androidx.camera.view.PreviewView android:id="@+id/preview"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintDimensionRatio="2:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <View
+    <androidx.constraintlayout.widget.Guideline android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_end="16dp" />
+
+    <com.google.android.material.slider.Slider android:id="@+id/slider"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@color/black"
-        app:layout_constraintBottom_toBottomOf="@id/textureView"
-        app:layout_constraintEnd_toEndOf="@id/textureView"
-        app:layout_constraintStart_toStartOf="@id/textureView"
-        app:layout_constraintTop_toTopOf="@id/textureView" />
+        android:layout_marginHorizontal="16dp"
+        android:valueFrom="0"
+        android:valueTo="1"
+        app:layout_constraintBottom_toBottomOf="@id/btnTorch"
+        app:layout_constraintEnd_toStartOf="@id/btnTorch"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnTorch" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton android:id="@+id/btnTorch"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_marginBottom="72dp"
+        android:src="@android:drawable/btn_star"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/guideline" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

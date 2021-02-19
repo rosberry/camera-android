@@ -1,21 +1,25 @@
 package com.rosberry.camera
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.Camera
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.rosberry.camera.databinding.ActivityMainBinding
+import java.io.File
+import java.io.FileInputStream
 
+private const val REQUEST_CODE_CAMERA = 407
+
+@SuppressLint("ClickableViewAccessibility")
 class MainActivity : AppCompatActivity() {
 
-    private var camera: Camera? = null
-
-    private var torchEnabled = false
-
     private lateinit var binding: ActivityMainBinding
+
+    private lateinit var cameraController: CameraController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,41 +27,55 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        cameraController = CameraController(this)
+        cameraController.setPreviewView(binding.preview)
+
         binding.btnTorch.setOnClickListener { toggleTorch() }
-        binding.slider.addOnChangeListener { _, value, _ -> setZoom(value) }
-        startCamera()
-    }
+        binding.btnTorch.text = FlashMode.OFF.name
+        binding.btnShoot.setOnClickListener { takePicture() }
+        binding.btnCamera.setOnClickListener { switchCamera() }
 
-    private fun startCamera() {
-        ProcessCameraProvider
-            .getInstance(this)
-            .run {
-                addListener({
-                    val selector = CameraSelector.DEFAULT_BACK_CAMERA
-                    val provider = get()
-                    val preview = Preview.Builder()
-                        .build()
-                        .also { it.setSurfaceProvider(binding.preview.surfaceProvider) }
-
-                    try {
-                        provider.unbindAll()
-                        camera = provider.bindToLifecycle(this@MainActivity, selector, preview)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }, ContextCompat.getMainExecutor(this@MainActivity))
-            }
-    }
-
-    private fun setZoom(zoom: Float) {
-        camera?.cameraControl?.setLinearZoom(zoom.coerceIn(0f, 1f))
-    }
-
-    private fun toggleTorch() {
-        torchEnabled = !torchEnabled
-        if (camera?.cameraInfo?.hasFlashUnit() == true) {
-            camera?.cameraControl?.enableTorch(torchEnabled)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            startCamera()
+        } else {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO), REQUEST_CODE_CAMERA)
         }
     }
 
+    private fun switchCamera() {
+        cameraController.switchCamera()
+    }
+
+    private fun startCamera() {
+        cameraController.start(this)
+    }
+
+    private fun toggleTorch() {
+        binding.btnTorch.text = cameraController.switchFlashMode().name
+    }
+
+    private fun takePicture() {
+        cameraController.takePicture({ showPreview(it) })
+    }
+
+    private fun showPreview(file: File) {
+        FileInputStream(file).use {
+            val options = BitmapFactory.Options()
+            options.inSampleSize = 4
+
+            val bitmap = BitmapFactory.decodeStream(it, null, options)
+            runOnUiThread { binding.imagePreview.setImageBitmap(bitmap) }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == REQUEST_CODE_CAMERA
+                && grantResults.getOrNull(0) == PackageManager.PERMISSION_GRANTED
+                && grantResults.getOrNull(1) == PackageManager.PERMISSION_GRANTED) {
+            startCamera()
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        }
+    }
 }

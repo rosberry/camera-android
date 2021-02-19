@@ -14,29 +14,54 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.constraintlayout.widget.Guideline android:id="@+id/guideline"
+    <TextView android:id="@+id/status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_end="16dp" />
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="#FFFF00"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.slider.Slider android:id="@+id/slider"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginHorizontal="16dp"
-        android:valueFrom="0"
-        android:valueTo="1"
-        app:layout_constraintBottom_toBottomOf="@id/btnTorch"
-        app:layout_constraintEnd_toStartOf="@id/btnTorch"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/btnTorch" />
+    <!--    <com.google.android.material.slider.Slider android:id="@+id/slider"-->
+    <!--        android:layout_width="0dp"-->
+    <!--        android:layout_height="0dp"-->
+    <!--        android:layout_marginHorizontal="16dp"-->
+    <!--        android:valueFrom="0"-->
+    <!--        android:valueTo="1"-->
+    <!--        app:layout_constraintBottom_toBottomOf="@id/btnTorch"-->
+    <!--        app:layout_constraintEnd_toStartOf="@id/btnTorch"-->
+    <!--        app:layout_constraintStart_toStartOf="parent"-->
+    <!--        app:layout_constraintTop_toTopOf="@id/btnTorch" />-->
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton android:id="@+id/btnTorch"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_marginBottom="72dp"
-        android:src="@android:drawable/btn_star"
+    <Button android:id="@+id/btnTorch"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Flash"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@id/guideline" />
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button android:id="@+id/btnCamera"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:text="Camera"
+        app:layout_constraintBottom_toTopOf="@id/btnTorch"
+        app:layout_constraintEnd_toEndOf="@id/btnTorch" />
+
+    <Button android:id="@+id/btnShoot"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Shoot"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView android:id="@+id/imagePreview"
+        android:layout_width="120dp"
+        android:layout_height="160dp"
+        android:layout_margin="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

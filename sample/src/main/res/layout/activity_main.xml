@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:ignore="ContentDescription">
+    android:animateLayoutChanges="true"
+    tools:ignore="ContentDescription,HardcodedText">
 
     <androidx.camera.view.PreviewView android:id="@+id/preview"
         android:layout_width="0dp"
@@ -18,14 +19,14 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginHorizontal="96dp"
-        android:layout_marginBottom="24dp"
         android:valueFrom="0"
         android:valueTo="1"
+        android:visibility="invisible"
         app:haloColor="@color/white"
         app:labelBehavior="gone"
-        app:layout_constraintBottom_toTopOf="@id/btnShoot"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textZoom"
         app:thumbColor="@color/white"
         app:trackColor="#69ffffff"
         app:trackHeight="1dp" />
@@ -33,10 +34,13 @@
     <TextView android:id="@+id/textZoom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="1x"
         android:textColor="@color/white"
-        app:layout_constraintBottom_toTopOf="@id/slider"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="@id/btnZoom"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnZoom" />
 
     <ImageButton android:id="@+id/btnCamera"
         style="@style/CameraButton"
@@ -70,8 +74,14 @@
 
     <ImageButton android:id="@+id/btnZoom"
         style="@style/CameraButton"
-        android:src="@drawable/ic_pinch"
+        android:src="@drawable/ic_zoom"
         app:layout_constraintBottom_toTopOf="@id/btnFocus"
+        app:layout_constraintEnd_toEndOf="@id/btnTorch" />
+
+    <ImageButton android:id="@+id/btnPinch"
+        style="@style/CameraButton"
+        android:src="@drawable/ic_pinch"
+        app:layout_constraintBottom_toTopOf="@id/btnZoom"
         app:layout_constraintEnd_toEndOf="@id/btnTorch" />
 
     <ImageView android:id="@+id/imagePreview"

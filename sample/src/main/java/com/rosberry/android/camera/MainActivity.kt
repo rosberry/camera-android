@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.ImageCapture
@@ -12,6 +11,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.isInvisible
 import com.rosberry.android.camera.databinding.ActivityMainBinding
 import com.rosberry.android.library.CameraController
 import com.rosberry.android.library.CameraControllerCallback
@@ -32,6 +32,12 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     private val format = DecimalFormat("#.#").apply { roundingMode = RoundingMode.HALF_UP }
 
+    private var isSliderVisible = false
+
+    private val textVisibilityCallback by lazy {
+        Runnable { binding.textZoom.isInvisible = !isSliderVisible }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -42,8 +48,10 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
         binding.btnShoot.setOnClickListener { takePicture() }
         binding.btnCamera.setOnClickListener { switchCamera() }
         binding.btnFocus.setOnClickListener { resetFocus() }
-        binding.btnZoom.setOnClickListener { togglePinchZoom() }
-        binding.btnZoom.alpha = if (cameraController.isPinchZoomEnabled) 1f else 0.3f
+        binding.btnPinch.setOnClickListener { togglePinchZoom() }
+        binding.btnPinch.alpha = if (cameraController.isPinchZoomEnabled) 1f else 0.3f
+        binding.btnZoom.setOnClickListener { toggleLinearZoom() }
+        binding.btnZoom.alpha = if (isSliderVisible) 1f else 0.3f
         binding.slider.addOnChangeListener { _, value, fromUser -> if (fromUser) cameraController.setLinearZoom(value) }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
@@ -58,13 +66,15 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
     }
 
     private fun startCamera() {
-        cameraController.setCallback(this)
         cameraController.setPreviewView(binding.preview)
+        cameraController.isTapToFocusEnabled = true
         cameraController.start(this, false)
+        binding.root.postDelayed({ cameraController.setCallback(this) }, 100)
     }
 
     private fun toggleTorch() {
-        var index = FlashMode.values().indexOf(cameraController.flashMode)
+        var index = FlashMode.values()
+            .indexOf(cameraController.flashMode)
         index = if (index < 3) index + 1 else 0
         cameraController.setFlashMode(FlashMode.values()[index])
     }
@@ -86,7 +96,14 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     private fun togglePinchZoom() {
         cameraController.isPinchZoomEnabled = !cameraController.isPinchZoomEnabled
-        binding.btnZoom.alpha = if (cameraController.isPinchZoomEnabled) 1f else 0.3f
+        binding.btnPinch.alpha = if (cameraController.isPinchZoomEnabled) 1f else 0.3f
+    }
+
+    private fun toggleLinearZoom() {
+        isSliderVisible = !isSliderVisible
+        binding.slider.isInvisible = !isSliderVisible
+        binding.textZoom.isInvisible = !isSliderVisible
+        binding.btnZoom.alpha = if (isSliderVisible) 1f else 0.3f
     }
 
     private fun showPreview(file: File) {
@@ -96,6 +113,16 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
             val bitmap = BitmapFactory.decodeStream(it, null, options)
             runOnUiThread { binding.imagePreview.setImageBitmap(bitmap) }
+        }
+    }
+
+    private fun onZoomChanged() {
+        if (isSliderVisible) return
+
+        binding.textZoom.apply {
+            isInvisible = false
+            removeCallbacks(textVisibilityCallback)
+            postDelayed(textVisibilityCallback, 500)
         }
     }
 
@@ -119,6 +146,7 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     override fun onZoomRatioChanged(zoom: Float) {
         binding.textZoom.text = "${format.format(zoom)}x"
+        onZoomChanged()
     }
 
     override fun onLinearZoomChanged(zoom: Float) {

@@ -55,7 +55,6 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     private fun switchCamera() {
         cameraController.switchCamera()
-        binding.btnTorch.setImageDrawable(getFlashDrawable(cameraController.flashMode))
     }
 
     private fun startCamera() {
@@ -65,8 +64,9 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
     }
 
     private fun toggleTorch() {
-        val drawable = getFlashDrawable(cameraController.switchFlashMode())
-        binding.btnTorch.setImageDrawable(drawable)
+        var index = FlashMode.values().indexOf(cameraController.flashMode)
+        index = if (index < 3) index + 1 else 0
+        cameraController.setFlashMode(FlashMode.values()[index])
     }
 
     private fun resetFocus() {
@@ -99,6 +99,16 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
         }
     }
 
+    override fun onFlashModeChanged(mode: FlashMode) {
+        val drawableId = when (mode) {
+            FlashMode.OFF -> R.drawable.ic_flash_off
+            FlashMode.AUTO -> R.drawable.ic_flash_auto
+            FlashMode.ON -> R.drawable.ic_flash_on
+            FlashMode.TORCH -> R.drawable.ic_torch
+        }
+        binding.btnTorch.setImageDrawable(ResourcesCompat.getDrawable(resources, drawableId, theme))
+    }
+
     override fun onFocusChanged(x: Float, y: Float) {
         binding.btnFocus.setImageDrawable(ResourcesCompat.getDrawable(resources, R.drawable.ic_focus, theme))
     }
@@ -113,16 +123,6 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     override fun onLinearZoomChanged(zoom: Float) {
         binding.slider.value = zoom
-    }
-
-    private fun getFlashDrawable(mode: FlashMode): Drawable? {
-        val drawableId = when (mode) {
-            FlashMode.OFF -> R.drawable.ic_flash_off
-            FlashMode.AUTO -> R.drawable.ic_flash_auto
-            FlashMode.ON -> R.drawable.ic_flash_on
-            FlashMode.TORCH -> R.drawable.ic_torch
-        }
-        return ResourcesCompat.getDrawable(resources, drawableId, theme)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

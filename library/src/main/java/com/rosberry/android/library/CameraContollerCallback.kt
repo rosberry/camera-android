@@ -3,6 +3,11 @@ package com.rosberry.android.library
 interface CameraControllerCallback {
 
     /**
+     * Called when flash mode changed due to user interaction or camera switching.
+     */
+    fun onFlashModeChanged(mode: FlashMode) {}
+
+    /**
      * Called when auto-focus position changes via tap-to-focus gesture.
      */
     fun onFocusChanged(x: Float, y: Float) {}

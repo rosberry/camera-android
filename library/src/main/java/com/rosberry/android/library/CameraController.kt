@@ -113,7 +113,7 @@ class CameraController(private val context: Context) {
                         .build()
                         .apply { setSurfaceProvider(previewView?.get()?.surfaceProvider) }
                     imageCapture = ImageCapture.Builder()
-                        .setFlashMode(getFlashMode())
+                        .setFlashMode(getInternalFlashMode(flashMode))
                         .build()
                     bindCamera()
                 }, ContextCompat.getMainExecutor(context))
@@ -157,21 +157,17 @@ class CameraController(private val context: Context) {
     }
 
     /**
-     * Cycles over active camera flash modes.
-     * @return last updated mode if flashlight is available for current camera or `FlashMode.OFF`
+     * Sets current active camera flash mode to provided value. If the camera have no flashlight available, flash mode will be set to `FlashMode.OFF`.
+     * Default value is `FlashMode.OFF`
      */
-    fun switchFlashMode(): FlashMode {
-        if (!isFlashLightAvailable) return FlashMode.OFF
-
-        flashMode = FlashMode.values()
-            .run {
-                val index = indexOfFirst { it == flashMode } + 1
-                return@run if (index > this.size - 1) this[0] else this[index]
-            }
+    fun setFlashMode(mode: FlashMode) {
+        flashMode = when {
+            !isFlashLightAvailable || mode == FlashMode.OFF -> FlashMode.OFF
+            else -> mode
+        }
+        imageCapture?.flashMode = getInternalFlashMode(mode)
         camera?.cameraControl?.enableTorch(flashMode == FlashMode.TORCH)
-        imageCapture?.flashMode = getFlashMode()
-
-        return flashMode
+        callback?.get()?.onFlashModeChanged(flashMode)
     }
 
     /**
@@ -234,7 +230,7 @@ class CameraController(private val context: Context) {
                 ?.let { lifecycleOwner ->
                     camera = provider?.bindToLifecycle(lifecycleOwner, getCameraSelector(), preview, imageCapture)
                     camera?.cameraInfo?.zoomState?.observe(lifecycleOwner) { onZoomStateChanged(it) }
-                    if (!isFlashLightAvailable) flashMode = FlashMode.OFF
+                    setFlashMode(flashMode)
                 }
                 ?: throw IllegalStateException()
         } catch (e: Exception) {
@@ -249,8 +245,8 @@ class CameraController(private val context: Context) {
         }
     }
 
-    private fun getFlashMode(): Int {
-        return when (flashMode) {
+    private fun getInternalFlashMode(mode: FlashMode): Int {
+        return when (mode) {
             FlashMode.ON -> ImageCapture.FLASH_MODE_ON
             FlashMode.AUTO -> ImageCapture.FLASH_MODE_AUTO
             else -> ImageCapture.FLASH_MODE_OFF

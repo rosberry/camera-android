@@ -23,21 +23,6 @@ import java.util.concurrent.Executors
 class CameraController(private val context: Context) {
 
     /**
-     * Returns if flashlight available for active camera.
-     */
-    val isFlashLightAvailable get() = camera?.cameraInfo?.hasFlashUnit() == true
-
-    /**
-     * Controls whether pinch-to-zoom gesture is enabled.
-     */
-    var isZoomGestureEnabled: Boolean = false
-        set(value) {
-            previewView?.get()
-                ?.setOnTouchListener(if (value) cameraTouchListener else null)
-            field = value
-        }
-
-    /**
      * Controls whether tap-to-focus is enabled.
      */
     var isTapToFocusEnabled: Boolean = true
@@ -52,21 +37,24 @@ class CameraController(private val context: Context) {
     var flashMode = FlashMode.OFF
         private set
 
+    /**
+     * Controls whether pinch-to-zoom gesture is enabled.
+     */
+    var isPinchZoomEnabled: Boolean = false
+
+    private val isFlashLightAvailable get() = camera?.cameraInfo?.hasFlashUnit() == true
+
     private val captureExecutor by lazy { Executors.newSingleThreadExecutor() }
     private val cameraTouchListener by lazy {
         View.OnTouchListener { _, event ->
-            //            cameraGestureDetector.onTouchEvent(event)
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> return@OnTouchListener true
-                MotionEvent.ACTION_UP -> {
-                    if (isTapToFocusEnabled) setAFPoint(event.x, event.y)
-                    return@OnTouchListener true
-                }
+            if (isPinchZoomEnabled) cameraGestureDetector.onTouchEvent(event)
+            if (event.action == MotionEvent.ACTION_UP) {
+                if (!isScaling && isTapToFocusEnabled) setAFPoint(event.x, event.y)
+                isScaling = false
             }
-            false
+            true
         }
     }
-
     private val cameraGestureDetector by lazy {
         ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector?): Boolean {
@@ -76,17 +64,23 @@ class CameraController(private val context: Context) {
                 camera?.cameraControl?.setZoomRatio(zoom * scale)
                 return true
             }
+
+            override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
+                isScaling = true
+                return true
+            }
         })
     }
+
     private var camera: Camera? = null
     private var callback: WeakReference<CameraControllerCallback>? = null
     private var imageCapture: ImageCapture? = null
     private var lifecycleOwner: WeakReference<LifecycleOwner>? = null
     private var preview: Preview? = null
     private var previewView: WeakReference<PreviewView>? = null
-
     private var provider: ProcessCameraProvider? = null
     private var isFrontCamera = true
+    private var isScaling = false
 
     /**
      * Sets the [PreviewView] to provide a Surface for Preview.

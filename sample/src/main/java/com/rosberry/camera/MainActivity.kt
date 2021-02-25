@@ -36,6 +36,8 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
         binding.btnShoot.setOnClickListener { takePicture() }
         binding.btnCamera.setOnClickListener { switchCamera() }
         binding.btnFocus.setOnClickListener { resetFocus() }
+        binding.btnZoom.setOnClickListener { togglePinchZoom() }
+        binding.btnZoom.alpha = if (cameraController.isPinchZoomEnabled) 1f else 0.3f
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -66,6 +68,11 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     private fun takePicture() {
         cameraController.takePicture({ showPreview(it) })
+    }
+
+    private fun togglePinchZoom() {
+        cameraController.isPinchZoomEnabled = !cameraController.isPinchZoomEnabled
+        binding.btnZoom.alpha = if (cameraController.isPinchZoomEnabled) 1f else 0.3f
     }
 
     private fun showPreview(file: File) {

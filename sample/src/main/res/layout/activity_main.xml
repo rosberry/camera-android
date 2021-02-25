@@ -62,6 +62,12 @@
         app:layout_constraintBottom_toTopOf="@id/btnTorch"
         app:layout_constraintEnd_toEndOf="@id/btnTorch" />
 
+    <ImageButton android:id="@+id/btnZoom"
+        style="@style/CameraButton"
+        android:src="@drawable/ic_pinch"
+        app:layout_constraintBottom_toTopOf="@id/btnFocus"
+        app:layout_constraintEnd_toEndOf="@id/btnTorch" />
+
     <ImageView android:id="@+id/imagePreview"
         android:layout_width="120dp"
         android:layout_height="160dp"

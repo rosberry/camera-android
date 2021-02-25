@@ -7,6 +7,8 @@ import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
@@ -72,7 +74,14 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
     }
 
     private fun takePicture() {
-        cameraController.takePicture({ showPreview(it) })
+        val file = File.createTempFile("${System.currentTimeMillis()}", ".jpg")
+        cameraController.takePicture(file, object : ImageCapture.OnImageSavedCallback {
+            override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                showPreview(file)
+            }
+
+            override fun onError(exception: ImageCaptureException) {}
+        })
     }
 
     private fun togglePinchZoom() {

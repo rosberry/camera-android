@@ -1,7 +1,9 @@
 package com.rosberry.android.library
 
 import android.annotation.SuppressLint
+import android.content.ContentValues
 import android.content.Context
+import android.net.Uri
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
@@ -9,7 +11,6 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.core.ZoomState
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -17,6 +18,7 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import java.io.File
+import java.io.OutputStream
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 
@@ -173,26 +175,56 @@ class CameraController(private val context: Context) {
     }
 
     /**
-     * Captures a new still image and saves to a file.
-     * @see [ImageCapture.takePicture]
+     * Captures a new still image and saves to provided file.
      */
     fun takePicture(
-            onPictureTaken: (File) -> Unit,
-            onError: ((ImageCaptureException) -> Unit)? = null
+            file: File,
+            callback: ImageCapture.OnImageSavedCallback
     ) {
-        val file = File.createTempFile("${System.currentTimeMillis()}", ".jpg")
-        val options = ImageCapture.OutputFileOptions.Builder(file)
-            .build()
+        val options = ImageCapture.OutputFileOptions.Builder(file).build()
+        takePicture(options, callback)
+    }
 
-        imageCapture?.takePicture(options, captureExecutor, object : ImageCapture.OnImageSavedCallback {
-            override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                onPictureTaken(file)
-            }
+    /**
+     * Captures a new still image and writes to provided output stream.
+     */
+    fun takePicture(
+            outputStream: OutputStream,
+            callback: ImageCapture.OnImageSavedCallback
+    ) {
+        val options = ImageCapture.OutputFileOptions.Builder(outputStream).build()
+        takePicture(options, callback)
+    }
 
-            override fun onError(exception: ImageCaptureException) {
-                onError?.invoke(exception)
-            }
-        })
+    /**
+     * Captures a new still image and saves to `MediaStore` with provided parameters.
+     */
+    fun takePicture(
+            saveCollection: Uri,
+            contentValues: ContentValues,
+            callback: ImageCapture.OnImageSavedCallback
+    ) {
+        val options = ImageCapture.OutputFileOptions.Builder(context.contentResolver, saveCollection, contentValues).build()
+        takePicture(options, callback)
+    }
+
+    /**
+     * Captures a new still image and saves to a file along with application specified metadata.
+     * @see ImageCapture.OutputFileOptions
+     */
+    fun takePicture(
+            options: ImageCapture.OutputFileOptions,
+            callback: ImageCapture.OnImageSavedCallback
+    ) {
+        imageCapture?.takePicture(options, captureExecutor, callback)
+    }
+
+    /**
+     * Captures a new still image for in memory access.
+     * @see ImageCapture.takePicture
+     */
+    fun takePicture(callback: ImageCapture.OnImageCapturedCallback) {
+        imageCapture?.takePicture(captureExecutor, callback)
     }
 
     private fun bindCamera() {

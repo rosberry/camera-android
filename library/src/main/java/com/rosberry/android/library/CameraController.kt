@@ -1,4 +1,4 @@
-package com.rosberry.camera
+package com.rosberry.android.library
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -24,19 +24,19 @@ import java.util.concurrent.Executors
 class CameraController(private val context: Context) {
 
     /**
-     * Controls whether tap-to-focus is enabled.
-     */
-    var isTapToFocusEnabled: Boolean = true
-        set(value) {
-            if (!value) setAFPoint()
-            field = value
-        }
-
-    /**
      * Returns current camera flash mode.
      */
     var flashMode = FlashMode.OFF
         private set
+
+    /**
+     * Controls whether tap-to-focus is enabled.
+     */
+    var isTapToFocusEnabled: Boolean = false
+        set(value) {
+            if (!value) setAFPoint()
+            field = value
+        }
 
     /**
      * Controls whether pinch-to-zoom gesture is enabled.
@@ -156,7 +156,7 @@ class CameraController(private val context: Context) {
 
     /**
      * Cycles over active camera flash modes.
-     * @return last updated [Flash Mode] if flashlight is available for current camera or [FlashMode.OFF]
+     * @return last updated mode if flashlight is available for current camera or `FlashMode.OFF`
      */
     fun switchFlashMode(): FlashMode {
         if (!isFlashLightAvailable) return FlashMode.OFF

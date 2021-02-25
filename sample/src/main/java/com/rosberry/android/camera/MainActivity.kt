@@ -1,4 +1,4 @@
-package com.rosberry.camera
+package com.rosberry.android.camera
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -10,7 +10,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import com.rosberry.camera.databinding.ActivityMainBinding
+import com.rosberry.android.camera.databinding.ActivityMainBinding
+import com.rosberry.android.library.CameraController
+import com.rosberry.android.library.CameraControllerCallback
+import com.rosberry.android.library.FlashMode
 import java.io.File
 import java.io.FileInputStream
 import java.math.RoundingMode
@@ -23,7 +26,7 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     private lateinit var binding: ActivityMainBinding
 
-    private lateinit var cameraController: CameraController
+    private val cameraController: CameraController by lazy { CameraController(this) }
 
     private val format = DecimalFormat("#.#").apply { roundingMode = RoundingMode.HALF_UP }
 
@@ -33,9 +36,6 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        cameraController = CameraController(this)
-        cameraController.setPreviewView(binding.preview)
-
         binding.btnTorch.setOnClickListener { toggleTorch() }
         binding.btnShoot.setOnClickListener { takePicture() }
         binding.btnCamera.setOnClickListener { switchCamera() }
@@ -44,11 +44,10 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
         binding.btnZoom.alpha = if (cameraController.isPinchZoomEnabled) 1f else 0.3f
         binding.slider.addOnChangeListener { _, value, fromUser -> if (fromUser) cameraController.setLinearZoom(value) }
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             startCamera()
         } else {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO), REQUEST_CODE_CAMERA)
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), REQUEST_CODE_CAMERA)
         }
     }
 
@@ -59,6 +58,7 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     private fun startCamera() {
         cameraController.setCallback(this)
+        cameraController.setPreviewView(binding.preview)
         cameraController.start(this, false)
     }
 
@@ -117,9 +117,7 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == REQUEST_CODE_CAMERA
-                && grantResults.getOrNull(0) == PackageManager.PERMISSION_GRANTED
-                && grantResults.getOrNull(1) == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == REQUEST_CODE_CAMERA && grantResults.getOrNull(0) == PackageManager.PERMISSION_GRANTED) {
             startCamera()
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults)

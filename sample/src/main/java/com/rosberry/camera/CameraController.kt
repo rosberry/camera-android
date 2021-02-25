@@ -11,6 +11,7 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
+import androidx.camera.core.ZoomState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -127,12 +128,23 @@ class CameraController(private val context: Context) {
     }
 
     /**
-     * Sets current camera zoom level.
+     * Sets current camera linear zoom level.
      * @param zoom linear zoom value from 0 to 1, it will be coerced to the nearest value if out of bounds
      * @see androidx.camera.core.CameraControl.setLinearZoom
      */
-    fun setZoom(zoom: Float) {
+    fun setLinearZoom(zoom: Float) {
         camera?.cameraControl?.setLinearZoom(zoom.coerceIn(0f, 1f))
+    }
+
+    /**
+     * Sets current camera zoom ratio.
+     * @param zoom ratio value, it wiil be coerced to the minimum/maximum available value if out of bounds
+     */
+    fun setZoomRatio(zoomRatio: Float) {
+        camera?.run {
+            val info = cameraInfo.zoomState.value
+            cameraControl.setZoomRatio(zoomRatio.coerceIn(info?.minZoomRatio, info?.maxZoomRatio))
+        }
     }
 
     /**
@@ -189,6 +201,7 @@ class CameraController(private val context: Context) {
             lifecycleOwner?.get()
                 ?.let { lifecycleOwner ->
                     camera = provider?.bindToLifecycle(lifecycleOwner, getCameraSelector(), preview, imageCapture)
+                    camera?.cameraInfo?.zoomState?.observe(lifecycleOwner) { onZoomStateChanged(it) }
                     if (!isFlashLightAvailable) flashMode = FlashMode.OFF
                 }
                 ?: throw IllegalStateException()
@@ -230,6 +243,14 @@ class CameraController(private val context: Context) {
                             false -> onFocusChanged(x, y)
                         }
                     }
+            }
+    }
+
+    private fun onZoomStateChanged(zoomState: ZoomState) {
+        callback?.get()
+            ?.apply {
+                onLinearZoomChanged(zoomState.linearZoom)
+                onZoomRatioChanged(zoomState.zoomRatio)
             }
     }
 }

@@ -13,6 +13,8 @@ import androidx.core.content.res.ResourcesCompat
 import com.rosberry.camera.databinding.ActivityMainBinding
 import java.io.File
 import java.io.FileInputStream
+import java.math.RoundingMode
+import java.text.DecimalFormat
 
 private const val REQUEST_CODE_CAMERA = 407
 
@@ -22,6 +24,8 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var cameraController: CameraController
+
+    private val format = DecimalFormat("#.#").apply { roundingMode = RoundingMode.HALF_UP }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +42,7 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
         binding.btnFocus.setOnClickListener { resetFocus() }
         binding.btnZoom.setOnClickListener { togglePinchZoom() }
         binding.btnZoom.alpha = if (cameraController.isPinchZoomEnabled) 1f else 0.3f
+        binding.slider.addOnChangeListener { _, value, fromUser -> if (fromUser) cameraController.setLinearZoom(value) }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -54,7 +59,7 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     private fun startCamera() {
         cameraController.setCallback(this)
-        cameraController.start(this)
+        cameraController.start(this, false)
     }
 
     private fun toggleTorch() {
@@ -91,6 +96,14 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     override fun onFocusReset() {
         binding.btnFocus.setImageDrawable(ResourcesCompat.getDrawable(resources, R.drawable.ic_focus_auto, theme))
+    }
+
+    override fun onZoomRatioChanged(zoom: Float) {
+        binding.textZoom.text = "${format.format(zoom)}x"
+    }
+
+    override fun onLinearZoomChanged(zoom: Float) {
+        binding.slider.value = zoom
     }
 
     private fun getFlashDrawable(mode: FlashMode): Drawable? {

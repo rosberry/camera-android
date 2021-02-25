@@ -101,7 +101,12 @@ class CameraController(private val context: Context) {
         this.callback = WeakReference(callback)
     }
 
-    fun start(lifecycleOwner: LifecycleOwner, isFrontCamera: Boolean = true) {
+    /**
+     * Creates preview and capture use cases and binds them to lifecycle owner.
+     * @param lifecycleOwner [LifecycleOwner] to bind camera use cases to
+     * @param isFrontCamera controls whether initial camera will be front camera, default value is `true`
+     */
+    fun start(lifecycleOwner: LifecycleOwner, isFrontCamera: Boolean = this.isFrontCamera) {
         this.lifecycleOwner = WeakReference(lifecycleOwner)
         this.isFrontCamera = isFrontCamera
         ProcessCameraProvider

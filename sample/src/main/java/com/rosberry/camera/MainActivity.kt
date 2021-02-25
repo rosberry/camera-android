@@ -4,10 +4,12 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import com.rosberry.camera.databinding.ActivityMainBinding
 import java.io.File
 import java.io.FileInputStream
@@ -15,7 +17,7 @@ import java.io.FileInputStream
 private const val REQUEST_CODE_CAMERA = 407
 
 @SuppressLint("ClickableViewAccessibility")
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     private lateinit var binding: ActivityMainBinding
 
@@ -31,9 +33,9 @@ class MainActivity : AppCompatActivity() {
         cameraController.setPreviewView(binding.preview)
 
         binding.btnTorch.setOnClickListener { toggleTorch() }
-        binding.btnTorch.text = FlashMode.OFF.name
         binding.btnShoot.setOnClickListener { takePicture() }
         binding.btnCamera.setOnClickListener { switchCamera() }
+        binding.btnFocus.setOnClickListener { resetFocus() }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -45,14 +47,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun switchCamera() {
         cameraController.switchCamera()
+        binding.btnTorch.setImageDrawable(getFlashDrawable(cameraController.flashMode))
     }
 
     private fun startCamera() {
+        cameraController.setCallback(this)
         cameraController.start(this)
     }
 
     private fun toggleTorch() {
-        binding.btnTorch.text = cameraController.switchFlashMode().name
+        val drawable = getFlashDrawable(cameraController.switchFlashMode())
+        binding.btnTorch.setImageDrawable(drawable)
+    }
+
+    private fun resetFocus() {
+        cameraController.resetAutoFocus()
     }
 
     private fun takePicture() {
@@ -67,6 +76,24 @@ class MainActivity : AppCompatActivity() {
             val bitmap = BitmapFactory.decodeStream(it, null, options)
             runOnUiThread { binding.imagePreview.setImageBitmap(bitmap) }
         }
+    }
+
+    override fun onFocusChanged(x: Float, y: Float) {
+        binding.btnFocus.setImageDrawable(ResourcesCompat.getDrawable(resources, R.drawable.ic_focus, theme))
+    }
+
+    override fun onFocusReset() {
+        binding.btnFocus.setImageDrawable(ResourcesCompat.getDrawable(resources, R.drawable.ic_focus_auto, theme))
+    }
+
+    private fun getFlashDrawable(mode: FlashMode): Drawable? {
+        val drawableId = when (mode) {
+            FlashMode.OFF -> R.drawable.ic_flash_off
+            FlashMode.AUTO -> R.drawable.ic_flash_auto
+            FlashMode.ON -> R.drawable.ic_flash_on
+            FlashMode.TORCH -> R.drawable.ic_torch
+        }
+        return ResourcesCompat.getDrawable(resources, drawableId, theme)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

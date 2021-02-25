@@ -2,10 +2,12 @@ package com.rosberry.camera
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
@@ -25,10 +27,46 @@ class CameraController(private val context: Context) {
      */
     val isFlashLightAvailable get() = camera?.cameraInfo?.hasFlashUnit() == true
 
+    /**
+     * Controls whether pinch-to-zoom gesture is enabled.
+     */
+    var isZoomGestureEnabled: Boolean = false
+        set(value) {
+            previewView?.get()
+                ?.setOnTouchListener(if (value) cameraTouchListener else null)
+            field = value
+        }
+
+    /**
+     * Controls whether tap-to-focus is enabled.
+     */
+    var isTapToFocusEnabled: Boolean = true
+        set(value) {
+            if (!value) setAFPoint()
+            field = value
+        }
+
+    /**
+     * Returns current camera flash mode.
+     */
+    var flashMode = FlashMode.OFF
+        private set
+
     private val captureExecutor by lazy { Executors.newSingleThreadExecutor() }
     private val cameraTouchListener by lazy {
-        View.OnTouchListener { _, event -> cameraGestureDetector.onTouchEvent(event) }
+        View.OnTouchListener { _, event ->
+            //            cameraGestureDetector.onTouchEvent(event)
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> return@OnTouchListener true
+                MotionEvent.ACTION_UP -> {
+                    if (isTapToFocusEnabled) setAFPoint(event.x, event.y)
+                    return@OnTouchListener true
+                }
+            }
+            false
+        }
     }
+
     private val cameraGestureDetector by lazy {
         ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector?): Boolean {
@@ -40,15 +78,14 @@ class CameraController(private val context: Context) {
             }
         })
     }
-
     private var camera: Camera? = null
+    private var callback: WeakReference<CameraControllerCallback>? = null
     private var imageCapture: ImageCapture? = null
     private var lifecycleOwner: WeakReference<LifecycleOwner>? = null
     private var preview: Preview? = null
     private var previewView: WeakReference<PreviewView>? = null
-    private var provider: ProcessCameraProvider? = null
 
-    private var flashMode = FlashMode.OFF
+    private var provider: ProcessCameraProvider? = null
     private var isFrontCamera = true
 
     /**
@@ -58,6 +95,13 @@ class CameraController(private val context: Context) {
         this.previewView = WeakReference(previewView).apply {
             get()?.setOnTouchListener(cameraTouchListener)
         }
+    }
+
+    /**
+     * Sets the [CameraControllerCallback] to monitor certain camera events.
+     */
+    fun setCallback(callback: CameraControllerCallback) {
+        this.callback = WeakReference(callback)
     }
 
     fun start(lifecycleOwner: LifecycleOwner, isFrontCamera: Boolean = true) {
@@ -89,6 +133,22 @@ class CameraController(private val context: Context) {
     }
 
     /**
+     * Sets current camera zoom level.
+     * @param zoom linear zoom value from 0 to 1, it will be coerced to the nearest value if out of bounds
+     * @see androidx.camera.core.CameraControl.setLinearZoom
+     */
+    fun setZoom(zoom: Float) {
+        camera?.cameraControl?.setLinearZoom(zoom.coerceIn(0f, 1f))
+    }
+
+    /**
+     * Resets auto-focus position to the middle of preview view.
+     */
+    fun resetAutoFocus() {
+        setAFPoint()
+    }
+
+    /**
      * Cycles over active camera flash modes.
      * @return last updated [Flash Mode] if flashlight is available for current camera or [FlashMode.OFF]
      */
@@ -100,7 +160,7 @@ class CameraController(private val context: Context) {
                 val index = indexOfFirst { it == flashMode } + 1
                 return@run if (index > this.size - 1) this[0] else this[index]
             }
-        camera?.cameraControl?.enableTorch(flashMode == FlashMode.FORCE)
+        camera?.cameraControl?.enableTorch(flashMode == FlashMode.TORCH)
         imageCapture?.flashMode = getFlashMode()
 
         return flashMode
@@ -133,7 +193,10 @@ class CameraController(private val context: Context) {
         try {
             provider?.unbindAll()
             lifecycleOwner?.get()
-                ?.let { lifecycleOwner -> camera = provider?.bindToLifecycle(lifecycleOwner, getCameraSelector(), preview, imageCapture) }
+                ?.let { lifecycleOwner ->
+                    camera = provider?.bindToLifecycle(lifecycleOwner, getCameraSelector(), preview, imageCapture)
+                    if (!isFlashLightAvailable) flashMode = FlashMode.OFF
+                }
                 ?: throw IllegalStateException()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -153,5 +216,26 @@ class CameraController(private val context: Context) {
             FlashMode.AUTO -> ImageCapture.FLASH_MODE_AUTO
             else -> ImageCapture.FLASH_MODE_OFF
         }
+    }
+
+    private fun setAFPoint(focusX: Float? = null, focusY: Float? = null) {
+        previewView?.get()
+            ?.run {
+                val reset = focusX == null && focusY == null
+                val x = focusX ?: width / 2f
+                val y = focusY ?: height / 2f
+                val point = meteringPointFactory.createPoint(x, y)
+                val action = FocusMeteringAction.Builder(point)
+                    .build()
+                camera?.cameraControl?.startFocusAndMetering(action)
+
+                callback?.get()
+                    ?.apply {
+                        when (reset) {
+                            true -> onFocusReset()
+                            false -> onFocusChanged(x, y)
+                        }
+                    }
+            }
     }
 }

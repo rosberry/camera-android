@@ -34,28 +34,33 @@
     <!--        app:layout_constraintStart_toStartOf="parent"-->
     <!--        app:layout_constraintTop_toTopOf="@id/btnTorch" />-->
 
-    <Button android:id="@+id/btnTorch"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
+    <ImageButton android:id="@+id/btnCamera"
+        style="@style/CameraButton"
         android:layout_margin="16dp"
-        android:text="Flash"
+        android:src="@drawable/ic_swap"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton android:id="@+id/btnShoot"
+        style="@style/CameraButton"
+        android:src="@drawable/ic_shutter"
+        android:layout_margin="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton android:id="@+id/btnTorch"
+        style="@style/CameraButton"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_flash_off"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <Button android:id="@+id/btnCamera"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:text="Camera"
+    <ImageButton android:id="@+id/btnFocus"
+        style="@style/CameraButton"
+        android:src="@drawable/ic_focus_auto"
         app:layout_constraintBottom_toTopOf="@id/btnTorch"
         app:layout_constraintEnd_toEndOf="@id/btnTorch" />
-
-    <Button android:id="@+id/btnShoot"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:text="Shoot"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
 
     <ImageView android:id="@+id/imagePreview"
         android:layout_width="120dp"

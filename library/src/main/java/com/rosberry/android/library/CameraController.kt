@@ -9,6 +9,7 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraUnavailableException
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
@@ -48,6 +49,8 @@ class CameraController(private val context: Context) {
     private val isFlashLightAvailable get() = camera?.cameraInfo?.hasFlashUnit() == true
 
     private val captureExecutor by lazy { Executors.newSingleThreadExecutor() }
+    private val fromCameraSelector by lazy { CameraSelector.DEFAULT_FRONT_CAMERA }
+    private val backCameraSelector by lazy { CameraSelector.DEFAULT_BACK_CAMERA }
     private val cameraTouchListener by lazy {
         View.OnTouchListener { _, event ->
             if (isPinchZoomEnabled) cameraGestureDetector.onTouchEvent(event)
@@ -82,8 +85,10 @@ class CameraController(private val context: Context) {
     private var preview: Preview? = null
     private var previewView: WeakReference<PreviewView>? = null
     private var provider: ProcessCameraProvider? = null
-    private var isFrontCamera = true
+    private var isFrontCameraPreferred = true
     private var isScaling = false
+    private var hasFrontCamera = false
+    private var hasBackCamera = false
 
     /**
      * Sets the [PreviewView] to provide a Surface for Preview.
@@ -104,16 +109,19 @@ class CameraController(private val context: Context) {
     /**
      * Creates preview and capture use cases and binds them to lifecycle owner.
      * @param lifecycleOwner [LifecycleOwner] to bind camera use cases to
-     * @param isFrontCamera controls whether initial camera will be front camera, default value is `true`
+     * @param isFrontCamera controls whether preferred initial camera will be front camera, default value is `true`
      */
-    fun start(lifecycleOwner: LifecycleOwner, isFrontCamera: Boolean = this.isFrontCamera) {
+    fun start(lifecycleOwner: LifecycleOwner, isFrontCamera: Boolean = this.isFrontCameraPreferred) {
         this.lifecycleOwner = WeakReference(lifecycleOwner)
-        this.isFrontCamera = isFrontCamera
+        this.isFrontCameraPreferred = isFrontCamera
         ProcessCameraProvider
             .getInstance(context)
             .run {
                 addListener({
                     provider = get()
+                    provider?.availableCameraInfos?.let { callback?.get()?.onCameraCountAvailable(it.size) }
+                    hasFrontCamera = provider?.hasCamera(fromCameraSelector) == true
+                    hasBackCamera = provider?.hasCamera(backCameraSelector) == true
                     preview = Preview.Builder()
                         .build()
                         .apply { setSurfaceProvider(previewView?.get()?.surfaceProvider) }
@@ -130,7 +138,7 @@ class CameraController(private val context: Context) {
      * @return true if current active camera is front camera
      */
     fun switchCamera() {
-        isFrontCamera = !isFrontCamera
+        isFrontCameraPreferred = !isFrontCameraPreferred
         bindCamera()
     }
 
@@ -173,7 +181,8 @@ class CameraController(private val context: Context) {
         }
         imageCapture?.flashMode = getInternalFlashMode(mode)
         camera?.cameraControl?.enableTorch(flashMode == FlashMode.TORCH)
-        callback?.get()?.onFlashModeChanged(flashMode)
+        callback?.get()
+            ?.onFlashModeChanged(flashMode)
     }
 
     /**
@@ -183,7 +192,8 @@ class CameraController(private val context: Context) {
             file: File,
             callback: ImageCapture.OnImageSavedCallback
     ) {
-        val options = ImageCapture.OutputFileOptions.Builder(file).build()
+        val options = ImageCapture.OutputFileOptions.Builder(file)
+            .build()
         takePicture(options, callback)
     }
 
@@ -194,7 +204,8 @@ class CameraController(private val context: Context) {
             outputStream: OutputStream,
             callback: ImageCapture.OnImageSavedCallback
     ) {
-        val options = ImageCapture.OutputFileOptions.Builder(outputStream).build()
+        val options = ImageCapture.OutputFileOptions.Builder(outputStream)
+            .build()
         takePicture(options, callback)
     }
 
@@ -206,7 +217,8 @@ class CameraController(private val context: Context) {
             contentValues: ContentValues,
             callback: ImageCapture.OnImageSavedCallback
     ) {
-        val options = ImageCapture.OutputFileOptions.Builder(context.contentResolver, saveCollection, contentValues).build()
+        val options = ImageCapture.OutputFileOptions.Builder(context.contentResolver, saveCollection, contentValues)
+            .build()
         takePicture(options, callback)
     }
 
@@ -246,9 +258,11 @@ class CameraController(private val context: Context) {
     }
 
     private fun getCameraSelector(): CameraSelector {
-        return when (isFrontCamera) {
-            true -> CameraSelector.DEFAULT_FRONT_CAMERA
-            false -> CameraSelector.DEFAULT_BACK_CAMERA
+        return when {
+            isFrontCameraPreferred && hasFrontCamera -> fromCameraSelector
+            hasBackCamera -> backCameraSelector
+            hasFrontCamera -> fromCameraSelector
+            else -> throw CameraUnavailableException(CameraUnavailableException.CAMERA_UNKNOWN_ERROR)
         }
     }
 

@@ -26,4 +26,6 @@ interface CameraControllerCallback {
      * Called when linear zoom changed.
      */
     fun onLinearZoomChanged(zoom: Float) {}
+
+    fun onCameraCountAvailable(count: Int) {}
 }

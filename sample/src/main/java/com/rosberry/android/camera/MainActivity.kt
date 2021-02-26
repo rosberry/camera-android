@@ -69,8 +69,8 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
     private fun startCamera() {
         cameraController.setPreviewView(binding.preview)
         cameraController.isTapToFocusEnabled = true
+        cameraController.setCallback(this)
         cameraController.start(this, false)
-        binding.root.postDelayed({ cameraController.setCallback(this) }, 100)
     }
 
     private fun toggleTorch() {
@@ -155,6 +155,10 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
 
     override fun onLinearZoomChanged(zoom: Float) {
         binding.slider.value = zoom
+    }
+
+    override fun onCameraCountAvailable(count: Int) {
+        binding.btnCamera.isVisible = count > 1
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

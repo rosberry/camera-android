@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
+    tools:ignore="ContentDescription,HardcodedText">
+
+    <androidx.camera.view.PreviewView android:id="@+id/preview"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.slider.Slider android:id="@+id/slider"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="96dp"
+        android:layout_marginBottom="24dp"
+        android:valueFrom="0"
+        android:valueTo="1"
+        android:visibility="invisible"
+        app:haloColor="@android:color/white"
+        app:labelBehavior="gone"
+        app:layout_constraintBottom_toTopOf="@id/btnShoot"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:thumbColor="@android:color/white"
+        app:trackColor="#69ffffff"
+        app:trackHeight="1dp" />
+
+    <TextView android:id="@+id/textZoom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1x"
+        android:textColor="@android:color/white"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@id/slider"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton android:id="@+id/btnCamera"
+        style="@style/CameraButton"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_camera"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton android:id="@+id/btnShoot"
+        style="@style/CameraButton"
+        android:layout_margin="16dp"
+        android:padding="8dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/ic_shutter"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton android:id="@+id/btnTorch"
+        style="@style/CameraButton"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_flash_off"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageButton android:id="@+id/btnFocus"
+        style="@style/CameraButton"
+        android:layout_marginEnd="16dp"
+        android:src="@drawable/ic_focus_auto"
+        app:layout_constraintBottom_toTopOf="@id/btnTorch"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_goneMarginBottom="16dp" />
+
+    <ImageButton android:id="@+id/btnZoom"
+        style="@style/CameraButton"
+        android:src="@drawable/ic_zoom"
+        app:layout_constraintBottom_toTopOf="@id/btnFocus"
+        app:layout_constraintEnd_toEndOf="@id/btnFocus" />
+
+    <ImageButton android:id="@+id/btnPinch"
+        style="@style/CameraButton"
+        android:src="@drawable/ic_pinch"
+        app:layout_constraintBottom_toTopOf="@id/btnZoom"
+        app:layout_constraintEnd_toEndOf="@id/btnFocus" />
+</androidx.constraintlayout.widget.ConstraintLayout>

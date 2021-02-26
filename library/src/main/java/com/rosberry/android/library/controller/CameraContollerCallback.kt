@@ -1,4 +1,6 @@
-package com.rosberry.android.library
+package com.rosberry.android.library.controller
+
+import com.rosberry.android.library.FlashMode
 
 interface CameraControllerCallback {
 
@@ -10,12 +12,12 @@ interface CameraControllerCallback {
     /**
      * Called when auto-focus position changes via tap-to-focus gesture.
      */
-    fun onFocusChanged(x: Float, y: Float) {}
+    fun onCameraFocusChanged(x: Float, y: Float) {}
 
     /**
      * Called when auto-focus position resets.
      */
-    fun onFocusReset() {}
+    fun onCameraFocusReset() {}
 
     /**
      * Called when zoom ratio changed.

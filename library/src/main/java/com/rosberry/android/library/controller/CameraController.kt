@@ -1,4 +1,4 @@
-package com.rosberry.android.library
+package com.rosberry.android.library.controller
 
 import android.annotation.SuppressLint
 import android.content.ContentValues
@@ -18,6 +18,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import com.rosberry.android.library.FlashMode
 import java.io.File
 import java.io.OutputStream
 import java.lang.ref.WeakReference
@@ -288,8 +289,8 @@ class CameraController(private val context: Context) {
                 callback?.get()
                     ?.apply {
                         when (reset) {
-                            true -> onFocusReset()
-                            false -> onFocusChanged(x, y)
+                            true -> onCameraFocusReset()
+                            false -> onCameraFocusChanged(x, y)
                         }
                     }
             }

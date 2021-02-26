@@ -13,10 +13,10 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
-import com.rosberry.android.camera.databinding.ActivityMainBinding
-import com.rosberry.android.library.CameraController
-import com.rosberry.android.library.CameraControllerCallback
+import com.rosberry.android.camera.databinding.ActivityControllerBinding
 import com.rosberry.android.library.FlashMode
+import com.rosberry.android.library.controller.CameraController
+import com.rosberry.android.library.controller.CameraControllerCallback
 import java.io.File
 import java.io.FileInputStream
 import java.math.RoundingMode
@@ -25,9 +25,9 @@ import java.text.DecimalFormat
 private const val REQUEST_CODE_CAMERA = 407
 
 @SuppressLint("ClickableViewAccessibility")
-class MainActivity : AppCompatActivity(), CameraControllerCallback {
+class ControllerActivity : AppCompatActivity(), CameraControllerCallback {
 
-    private lateinit var binding: ActivityMainBinding
+    private lateinit var binding: ActivityControllerBinding
 
     private val cameraController: CameraController by lazy { CameraController(this) }
 
@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityControllerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         binding.btnTorch.setOnClickListener { toggleTorch() }
@@ -140,11 +140,11 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
         binding.btnTorch.setImageDrawable(ResourcesCompat.getDrawable(resources, drawableId, theme))
     }
 
-    override fun onFocusChanged(x: Float, y: Float) {
+    override fun onCameraFocusChanged(x: Float, y: Float) {
         binding.btnFocus.setImageDrawable(ResourcesCompat.getDrawable(resources, R.drawable.ic_focus, theme))
     }
 
-    override fun onFocusReset() {
+    override fun onCameraFocusReset() {
         binding.btnFocus.setImageDrawable(ResourcesCompat.getDrawable(resources, R.drawable.ic_focus_auto, theme))
     }
 

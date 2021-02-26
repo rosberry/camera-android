@@ -12,6 +12,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isInvisible
+import androidx.core.view.isVisible
 import com.rosberry.android.camera.databinding.ActivityMainBinding
 import com.rosberry.android.library.CameraController
 import com.rosberry.android.library.CameraControllerCallback
@@ -73,9 +74,9 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
     }
 
     private fun toggleTorch() {
-        var index = FlashMode.values()
-            .indexOf(cameraController.flashMode)
-        index = if (index < 3) index + 1 else 0
+        val modes = FlashMode.values()
+        var index = modes.indexOf(cameraController.flashMode)
+        index = if (index < modes.size - 1) index + 1 else 1
         cameraController.setFlashMode(FlashMode.values()[index])
     }
 
@@ -127,11 +128,14 @@ class MainActivity : AppCompatActivity(), CameraControllerCallback {
     }
 
     override fun onFlashModeChanged(mode: FlashMode) {
+        binding.btnTorch.isVisible = mode != FlashMode.NONE
+
         val drawableId = when (mode) {
             FlashMode.OFF -> R.drawable.ic_flash_off
             FlashMode.AUTO -> R.drawable.ic_flash_auto
             FlashMode.ON -> R.drawable.ic_flash_on
             FlashMode.TORCH -> R.drawable.ic_torch
+            else -> return
         }
         binding.btnTorch.setImageDrawable(ResourcesCompat.getDrawable(resources, drawableId, theme))
     }

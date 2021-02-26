@@ -162,12 +162,13 @@ class CameraController(private val context: Context) {
     }
 
     /**
-     * Sets current active camera flash mode to provided value. If the camera have no flashlight available, flash mode will be set to `FlashMode.OFF`.
+     * Sets current active camera flash mode to provided value. If the camera have no flashlight available, flash mode will be set to `FlashMode.NONE`.
      * Default value is `FlashMode.OFF`
      */
     fun setFlashMode(mode: FlashMode) {
         flashMode = when {
-            !isFlashLightAvailable || mode == FlashMode.OFF -> FlashMode.OFF
+            !isFlashLightAvailable -> FlashMode.NONE
+            mode == FlashMode.NONE -> FlashMode.OFF
             else -> mode
         }
         imageCapture?.flashMode = getInternalFlashMode(mode)
@@ -236,6 +237,7 @@ class CameraController(private val context: Context) {
                     camera = provider?.bindToLifecycle(lifecycleOwner, getCameraSelector(), preview, imageCapture)
                     camera?.cameraInfo?.zoomState?.observe(lifecycleOwner) { onZoomStateChanged(it) }
                     setFlashMode(flashMode)
+                    resetAutoFocus()
                 }
                 ?: throw IllegalStateException()
         } catch (e: Exception) {

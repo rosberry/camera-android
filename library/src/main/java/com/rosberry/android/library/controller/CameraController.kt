@@ -154,7 +154,7 @@ class CameraController(private val context: Context) {
 
     /**
      * Sets current camera zoom ratio.
-     * @param zoom ratio value, it wiil be coerced to the minimum/maximum available value if out of bounds
+     * @param zoomRatio zoom ratio value, it will be coerced to the minimum/maximum available value if out of bounds
      */
     fun setZoomRatio(zoomRatio: Float) {
         camera?.run {

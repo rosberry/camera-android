@@ -51,32 +51,8 @@ class CameraController(private val context: Context) {
     private val captureExecutor by lazy { Executors.newSingleThreadExecutor() }
     private val fromCameraSelector by lazy { CameraSelector.DEFAULT_FRONT_CAMERA }
     private val backCameraSelector by lazy { CameraSelector.DEFAULT_BACK_CAMERA }
-    private val cameraTouchListener by lazy {
-        View.OnTouchListener { _, event ->
-            if (isPinchZoomEnabled) cameraGestureDetector.onTouchEvent(event)
-            if (event.action == MotionEvent.ACTION_UP) {
-                if (!isScaling && isTapToFocusEnabled) setAFPoint(event.x, event.y)
-                isScaling = false
-            }
-            true
-        }
-    }
-    private val cameraGestureDetector by lazy {
-        ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-            override fun onScale(detector: ScaleGestureDetector?): Boolean {
-                val zoom = camera?.cameraInfo?.zoomState?.value?.zoomRatio ?: 1f
-                val scale = detector?.scaleFactor ?: 1f
-
-                camera?.cameraControl?.setZoomRatio(zoom * scale)
-                return true
-            }
-
-            override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
-                isScaling = true
-                return true
-            }
-        })
-    }
+    private val cameraTouchListener by lazy { TouchListener() }
+    private val cameraGestureDetector by lazy { ScaleGestureDetector(context, ScaleGestureListener()) }
 
     private var camera: Camera? = null
     private var callback: WeakReference<CameraControllerCallback>? = null
@@ -301,5 +277,32 @@ class CameraController(private val context: Context) {
                 onLinearZoomChanged(zoomState.linearZoom)
                 onZoomRatioChanged(zoomState.zoomRatio)
             }
+    }
+
+    private inner class TouchListener : View.OnTouchListener {
+        override fun onTouch(view: View?, event: MotionEvent?): Boolean {
+            if (isPinchZoomEnabled) cameraGestureDetector.onTouchEvent(event)
+            if (event?.action == MotionEvent.ACTION_UP) {
+                if (!isScaling && isTapToFocusEnabled) setAFPoint(event.x, event.y)
+                isScaling = false
+            }
+
+            return true
+        }
+    }
+
+    private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScale(detector: ScaleGestureDetector?): Boolean {
+            val zoom = camera?.cameraInfo?.zoomState?.value?.zoomRatio ?: 1f
+            val scale = detector?.scaleFactor ?: 1f
+
+            camera?.cameraControl?.setZoomRatio(zoom * scale)
+            return true
+        }
+
+        override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
+            isScaling = true
+            return true
+        }
     }
 }

@@ -1,4 +1,4 @@
-package com.rosberry.android.library.controller
+package com.rosberry.camera.controller
 
 import android.annotation.SuppressLint
 import android.content.ContentValues
@@ -18,7 +18,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import com.rosberry.android.library.FlashMode
 import java.io.File
 import java.io.OutputStream
 import java.lang.ref.WeakReference

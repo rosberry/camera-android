@@ -1,4 +1,4 @@
-package com.rosberry.android.camera
+package com.rosberry.camera.sample
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -13,19 +13,22 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
-import com.rosberry.android.camera.databinding.ActivityControllerBinding
-import com.rosberry.android.library.FlashMode
-import com.rosberry.android.library.controller.CameraController
-import com.rosberry.android.library.controller.CameraControllerCallback
+import com.rosberry.camera.controller.CameraController
+import com.rosberry.camera.controller.CameraControllerCallback
+import com.rosberry.camera.controller.FlashMode
+import com.rosberry.camera.sample.databinding.ActivityControllerBinding
 import java.io.File
 import java.io.FileInputStream
 import java.math.RoundingMode
 import java.text.DecimalFormat
 
-private const val REQUEST_CODE_CAMERA = 407
-
 @SuppressLint("ClickableViewAccessibility")
 class ControllerActivity : AppCompatActivity(), CameraControllerCallback {
+
+    companion object {
+
+        private const val REQUEST_CODE_CAMERA = 407
+    }
 
     private lateinit var binding: ActivityControllerBinding
 

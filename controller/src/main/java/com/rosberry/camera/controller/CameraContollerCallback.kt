@@ -1,6 +1,4 @@
-package com.rosberry.android.library.controller
-
-import com.rosberry.android.library.FlashMode
+package com.rosberry.camera.controller
 
 interface CameraControllerCallback {
 

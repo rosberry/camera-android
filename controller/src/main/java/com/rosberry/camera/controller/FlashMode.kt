@@ -1,4 +1,4 @@
-package com.rosberry.android.library
+package com.rosberry.camera.controller
 
 enum class FlashMode {
     NONE,

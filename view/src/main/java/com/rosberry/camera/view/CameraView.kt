@@ -58,7 +58,7 @@ class CameraView @JvmOverloads constructor(
             setCallback(this@CameraView)
         }
         btnFlash.setOnClickListener { controller.cycleFlashMode() }
-        btnReset.setOnClickListener { controller.setLinearZoom(0f) }
+        btnReset?.setOnClickListener { controller.setLinearZoom(0f) }
         btnSwitch.setOnClickListener { controller.switchCamera() }
         btnShutter.setOnClickListener { takePicture() }
         focus.setOnClickListener { controller.resetAutoFocus() }

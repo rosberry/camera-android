@@ -54,6 +54,7 @@ class CameraController(private val context: Context) {
     private val cameraTouchListener by lazy { TouchListener() }
     private val cameraGestureDetector by lazy { ScaleGestureDetector(context, ScaleGestureListener()) }
 
+    private var flashModes: Array<FlashMode> = FlashMode.values()
     private var camera: Camera? = null
     private var callback: WeakReference<CameraControllerCallback>? = null
     private var imageCapture: ImageCapture? = null
@@ -146,8 +147,9 @@ class CameraController(private val context: Context) {
     }
 
     /**
-     * Sets current active camera flash mode to provided value. If the camera have no flashlight available, flash mode will be set to `FlashMode.NONE`.
-     * Default value is `FlashMode.OFF`
+     * Sets current active camera flash mode to provided value.
+     * If the camera have no flashlight available, flash mode will be set to `FlashMode.NONE`.
+     * Default value is `FlashMode.OFF`.
      */
     fun setFlashMode(mode: FlashMode) {
         flashMode = when {
@@ -162,11 +164,38 @@ class CameraController(private val context: Context) {
     }
 
     /**
+     *  Sets array of [FlashMode]s available to cycle via `cycleFlashMode()` call.
+     *
+     *  Pass `null` argument to set all available flash modes.
+     *
+     *  @throws IllegalStateException when provided with empty collection.
+     *  @see cycleFlashMode
+     */
+    fun setAvailableFlashModes(modes: Array<FlashMode>?) {
+        if (modes?.isEmpty() == true) throw IllegalArgumentException()
+        flashModes = modes ?: FlashMode.values()
+    }
+
+    /**
+     * Cycles through available flash modes.
+     * If the camera have no flashlight available, flash mode will be set to `FlashMode.NONE`.
+     * Default value is `FlashMode.OFF`.
+     *
+     * @see setAvailableFlashModes
+     */
+    fun cycleFlashMode() {
+        flashModes.run {
+            val currentIndex = indexOf(flashMode)
+            setFlashMode(get(if (currentIndex < size - 1) currentIndex + 1 else 0))
+        }
+    }
+
+    /**
      * Captures a new still image and saves to provided file.
      */
     fun takePicture(
-            file: File,
-            callback: ImageCapture.OnImageSavedCallback
+        file: File,
+        callback: ImageCapture.OnImageSavedCallback
     ) {
         val options = ImageCapture.OutputFileOptions.Builder(file)
             .build()
@@ -177,8 +206,8 @@ class CameraController(private val context: Context) {
      * Captures a new still image and writes to provided output stream.
      */
     fun takePicture(
-            outputStream: OutputStream,
-            callback: ImageCapture.OnImageSavedCallback
+        outputStream: OutputStream,
+        callback: ImageCapture.OnImageSavedCallback
     ) {
         val options = ImageCapture.OutputFileOptions.Builder(outputStream)
             .build()
@@ -189,9 +218,9 @@ class CameraController(private val context: Context) {
      * Captures a new still image and saves to `MediaStore` with provided parameters.
      */
     fun takePicture(
-            saveCollection: Uri,
-            contentValues: ContentValues,
-            callback: ImageCapture.OnImageSavedCallback
+        saveCollection: Uri,
+        contentValues: ContentValues,
+        callback: ImageCapture.OnImageSavedCallback
     ) {
         val options = ImageCapture.OutputFileOptions.Builder(context.contentResolver, saveCollection, contentValues)
             .build()
@@ -203,8 +232,8 @@ class CameraController(private val context: Context) {
      * @see ImageCapture.OutputFileOptions
      */
     fun takePicture(
-            options: ImageCapture.OutputFileOptions,
-            callback: ImageCapture.OnImageSavedCallback
+        options: ImageCapture.OutputFileOptions,
+        callback: ImageCapture.OnImageSavedCallback
     ) {
         imageCapture?.takePicture(options, captureExecutor, callback)
     }

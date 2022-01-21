@@ -77,10 +77,7 @@ class ControllerActivity : AppCompatActivity(), CameraControllerCallback {
     }
 
     private fun toggleTorch() {
-        val modes = FlashMode.values()
-        var index = modes.indexOf(cameraController.flashMode)
-        index = if (index < modes.size - 1) index + 1 else 1
-        cameraController.setFlashMode(FlashMode.values()[index])
+        cameraController.cycleFlashMode()
     }
 
     private fun resetFocus() {

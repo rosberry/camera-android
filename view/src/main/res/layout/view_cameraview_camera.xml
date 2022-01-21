@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout">
+
+    <androidx.camera.view.PreviewView android:id="@+id/cameraview_preview"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:background="@android:color/darker_gray" />
+
+    <TextView android:id="@+id/cameraview_btn_reset"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_cameraview_button"
+        android:gravity="center"
+        android:padding="8dp"
+        android:text="@string/camera_zoom_reset"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toTopOf="@id/cameraview_btn_shutter"
+        app:layout_constraintDimensionRatio="1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/cameraview_btn_flash"
+        style="@style/CameraViewButton"
+        android:layout_marginEnd="50dp"
+        android:src="@drawable/ic_cameraview_flash_on"
+        app:layout_constraintBottom_toBottomOf="@id/cameraview_btn_shutter"
+        app:layout_constraintEnd_toStartOf="@id/cameraview_btn_shutter"
+        app:layout_constraintTop_toTopOf="@id/cameraview_btn_shutter" />
+
+    <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/cameraview_btn_shutter"
+        style="@style/CameraViewButton.Shutter"
+        android:layout_marginBottom="50dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/cameraview_btn_switch"
+        style="@style/CameraViewButton"
+        android:layout_marginStart="50dp"
+        android:src="@drawable/ic_cameraview_switch"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/cameraview_btn_shutter"
+        app:layout_constraintStart_toEndOf="@id/cameraview_btn_shutter"
+        app:layout_constraintTop_toTopOf="@id/cameraview_btn_shutter"
+        tools:visibility="visible" />
+
+    <com.google.android.material.slider.Slider android:id="@+id/cameraview_slider"
+        android:layout_width="200dp"
+        android:layout_height="20dp"
+        android:rotation="270"
+        android:translationX="42dp"
+        app:haloRadius="0dp"
+        app:labelBehavior="gone"
+        app:layout_constraintBottom_toBottomOf="@id/cameraview_text_zoom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/cameraview_text_zoom"
+        app:thumbColor="@color/camera_color_control"
+        app:trackColor="#4D000000"
+        app:trackHeight="2dp" />
+
+    <TextView android:id="@+id/cameraview_text_zoom"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@android:color/white"
+        android:textSize="32sp"
+        app:layout_constraintBottom_toBottomOf="@id/cameraview_btn_shutter"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="@string/camera_zoom_template" />
+
+    <View android:id="@+id/cameraview_focus"
+        android:layout_width="@dimen/cameraview_focus_size"
+        android:layout_height="@dimen/cameraview_focus_size"
+        android:background="@drawable/ic_cameraview_focus"
+        android:visibility="gone"
+        tools:ignore="MissingConstraints"
+        tools:visibility="visible" />
+</merge>

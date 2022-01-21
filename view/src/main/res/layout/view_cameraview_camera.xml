@@ -75,11 +75,13 @@
         android:gravity="center"
         android:textColor="@android:color/white"
         android:textSize="32sp"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="@id/cameraview_btn_shutter"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="@string/camera_zoom_template" />
+        tools:text="@string/camera_zoom_template"
+        tools:visibility="visible" />
 
     <View android:id="@+id/cameraview_focus"
         android:layout_width="@dimen/cameraview_focus_size"

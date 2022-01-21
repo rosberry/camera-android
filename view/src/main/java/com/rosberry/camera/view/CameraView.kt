@@ -1,5 +1,6 @@
 package com.rosberry.camera.view
 
+import android.animation.LayoutTransition
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
@@ -12,6 +13,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.view.PreviewView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.slider.Slider
@@ -37,6 +39,7 @@ class CameraView @JvmOverloads constructor(
     private val textZoom by lazy { findViewById<TextView>(R.id.cameraview_text_zoom) }
     private val preview by lazy { findViewById<PreviewView>(R.id.cameraview_preview) }
     private val slider by lazy { findViewById<Slider>(R.id.cameraview_slider) }
+    private val textCallback by lazy { Runnable { textZoom.isInvisible = true } }
 
     private val controller = CameraController(context)
 
@@ -47,6 +50,7 @@ class CameraView @JvmOverloads constructor(
 
     init {
         LayoutInflater.from(context).inflate(R.layout.view_cameraview_camera, this)
+        this.layoutTransition = LayoutTransition()
         controller.run {
             isTapToFocusEnabled = true
             setPreviewView(preview)
@@ -57,6 +61,7 @@ class CameraView @JvmOverloads constructor(
         btnReset.setOnClickListener { controller.setLinearZoom(0f) }
         btnSwitch.setOnClickListener { controller.switchCamera() }
         btnShutter.setOnClickListener { takePicture() }
+        focus.setOnClickListener { controller.resetAutoFocus() }
         slider.addOnChangeListener { _, value, fromUser -> if (fromUser) controller.setLinearZoom(value) }
     }
 
@@ -121,6 +126,11 @@ class CameraView @JvmOverloads constructor(
 
     override fun onLinearZoomChanged(zoom: Float) {
         slider.value = zoom
+        textZoom.run {
+            isInvisible = false
+            removeCallbacks(textCallback)
+            postDelayed(textCallback, 500L)
+        }
     }
 
     override fun onCameraCountAvailable(count: Int) {

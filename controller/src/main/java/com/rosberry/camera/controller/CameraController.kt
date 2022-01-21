@@ -191,12 +191,28 @@ class CameraController(private val context: Context) {
     }
 
     /**
-     * Captures a new still image and saves to provided file.
+     * Captures a new still image for in memory access.
+     * @see ImageCapture.takePicture
+     */
+    fun takePicture(callback: ImageCapture.OnImageCapturedCallback) {
+        imageCapture?.takePicture(captureExecutor, callback)
+    }
+
+    /**
+     * Captures a new still image and saves to a file along with application specified metadata.
+     * @see ImageCapture.OutputFileOptions
      */
     fun takePicture(
-        file: File,
+        options: ImageCapture.OutputFileOptions,
         callback: ImageCapture.OnImageSavedCallback
     ) {
+        imageCapture?.takePicture(options, captureExecutor, callback)
+    }
+
+    /**
+     * Captures a new still image and saves to provided file.
+     */
+    fun takePicture(file: File, callback: ImageCapture.OnImageSavedCallback) {
         val options = ImageCapture.OutputFileOptions.Builder(file)
             .build()
         takePicture(options, callback)
@@ -205,10 +221,7 @@ class CameraController(private val context: Context) {
     /**
      * Captures a new still image and writes to provided output stream.
      */
-    fun takePicture(
-        outputStream: OutputStream,
-        callback: ImageCapture.OnImageSavedCallback
-    ) {
+    fun takePicture(outputStream: OutputStream, callback: ImageCapture.OnImageSavedCallback) {
         val options = ImageCapture.OutputFileOptions.Builder(outputStream)
             .build()
         takePicture(options, callback)
@@ -225,25 +238,6 @@ class CameraController(private val context: Context) {
         val options = ImageCapture.OutputFileOptions.Builder(context.contentResolver, saveCollection, contentValues)
             .build()
         takePicture(options, callback)
-    }
-
-    /**
-     * Captures a new still image and saves to a file along with application specified metadata.
-     * @see ImageCapture.OutputFileOptions
-     */
-    fun takePicture(
-        options: ImageCapture.OutputFileOptions,
-        callback: ImageCapture.OnImageSavedCallback
-    ) {
-        imageCapture?.takePicture(options, captureExecutor, callback)
-    }
-
-    /**
-     * Captures a new still image for in memory access.
-     * @see ImageCapture.takePicture
-     */
-    fun takePicture(callback: ImageCapture.OnImageCapturedCallback) {
-        imageCapture?.takePicture(captureExecutor, callback)
     }
 
     private fun bindCamera() {

@@ -3,6 +3,7 @@ package com.rosberry.camera.view
 import android.animation.LayoutTransition
 import android.content.ContentValues
 import android.content.Context
+import android.media.Image
 import android.net.Uri
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -31,6 +32,8 @@ class CameraView @JvmOverloads constructor(
     defStyle: Int = 0
 ) : ConstraintLayout(context, attrs, defStyle), CameraControllerCallback {
 
+    private val controller = CameraController(context)
+
     private val btnFlash by lazy { findViewById<ImageButton>(R.id.cameraview_btn_flash) }
     private val btnShutter by lazy { findViewById<ImageButton>(R.id.cameraview_btn_shutter) }
     private val btnSwitch by lazy { findViewById<ImageButton>(R.id.cameraview_btn_switch) }
@@ -40,13 +43,7 @@ class CameraView @JvmOverloads constructor(
     private val preview by lazy { findViewById<PreviewView>(R.id.cameraview_preview) }
     private val slider by lazy { findViewById<Slider>(R.id.cameraview_slider) }
     private val textCallback by lazy { Runnable { textZoom.isInvisible = true } }
-
-    private val controller = CameraController(context)
-
     private val format: DecimalFormat by lazy { DecimalFormat("#.#").apply { roundingMode = RoundingMode.HALF_UP } }
-
-    private var options: ImageCapture.OutputFileOptions? = null
-    private var callback: ImageCapture.OnImageSavedCallback? = null
 
     init {
         LayoutInflater.from(context).inflate(R.layout.view_cameraview_camera, this)
@@ -60,13 +57,24 @@ class CameraView @JvmOverloads constructor(
         btnFlash.setOnClickListener { controller.cycleFlashMode() }
         btnReset?.setOnClickListener { controller.setLinearZoom(0f) }
         btnSwitch.setOnClickListener { controller.switchCamera() }
-        btnShutter.setOnClickListener { takePicture() }
         focus.setOnClickListener { controller.resetAutoFocus() }
         slider.addOnChangeListener { _, value, fromUser -> if (fromUser) controller.setLinearZoom(value) }
     }
 
     fun start(lifecycleOwner: LifecycleOwner) {
         controller.start(lifecycleOwner, false)
+    }
+
+    fun setTakePhotoListener(listener: (() -> Unit)?) {
+        btnShutter.setOnClickListener { listener?.invoke() }
+    }
+
+    fun takePicture(callback: ImageCapture.OnImageCapturedCallback) {
+        controller.takePicture(callback)
+    }
+
+    fun takePicture(options: ImageCapture.OutputFileOptions, callback: ImageCapture.OnImageSavedCallback) {
+        controller.takePicture(options, callback)
     }
 
     fun takePicture(file: File, callback: ImageCapture.OnImageSavedCallback) {
@@ -92,10 +100,6 @@ class CameraView @JvmOverloads constructor(
             ImageCapture.OutputFileOptions.Builder(context.contentResolver, saveCollection, contentValues).build(),
             callback
         )
-    }
-
-    fun takePicture(options: ImageCapture.OutputFileOptions, callback: ImageCapture.OnImageSavedCallback) {
-        controller.takePicture(options, callback)
     }
 
     override fun onFlashModeChanged(mode: FlashMode) {
@@ -135,9 +139,5 @@ class CameraView @JvmOverloads constructor(
 
     override fun onCameraCountAvailable(count: Int) {
         btnSwitch.isVisible = count > 1
-    }
-
-    private fun takePicture() {
-        options?.let { options -> callback?.let { callback -> return controller.takePicture(options, callback) } }
     }
 }

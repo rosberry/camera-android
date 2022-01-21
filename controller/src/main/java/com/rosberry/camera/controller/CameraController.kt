@@ -6,6 +6,7 @@ import android.content.Context
 import android.net.Uri
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
+import android.view.Surface
 import android.view.View
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -45,6 +46,20 @@ class CameraController(private val context: Context) {
      * Controls whether pinch-to-zoom gesture is enabled.
      */
     var isPinchZoomEnabled: Boolean = false
+
+    /**
+     * Sets the rotation of the intended target for images from this configuration.
+     *
+     * Valid values: [Surface.ROTATION_0], [Surface.ROTATION_90], [Surface.ROTATION_180], [Surface.ROTATION_270].
+     * Rotation values are relative to the "natural" rotation, [Surface.ROTATION_0].
+     *
+     * @see ImageCapture.Builder.setTargetRotation
+     */
+    var rotation: Int = Surface.ROTATION_0
+        set(value) {
+            imageCapture?.targetRotation = value
+            field = value
+        }
 
     private val isFlashLightAvailable get() = camera?.cameraInfo?.hasFlashUnit() == true
 
@@ -103,6 +118,7 @@ class CameraController(private val context: Context) {
                         .build()
                         .apply { setSurfaceProvider(previewView?.get()?.surfaceProvider) }
                     imageCapture = ImageCapture.Builder()
+                        .setTargetRotation(rotation)
                         .setFlashMode(getInternalFlashMode(flashMode))
                         .build()
                     bindCamera()

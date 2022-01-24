@@ -9,6 +9,13 @@
         <item name="android:tint">@color/camera_color_control</item>
     </style>
 
+    <style name="CameraViewButton.Padded">
+        <item name="android:layout_width">@dimen/cameraview_control_size</item>
+        <item name="android:layout_height">@dimen/cameraview_control_size</item>
+        <item name="android:background">@drawable/bg_cameraview_button_padded</item>
+        <item name="android:padding">@dimen/cameraview_control_padding</item>
+    </style>
+
     <style name="CameraViewButton.Shutter">
         <item name="android:layout_width">@dimen/cameraview_control_size</item>
         <item name="android:layout_height">@dimen/cameraview_control_size</item>

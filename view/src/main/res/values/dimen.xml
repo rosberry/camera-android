@@ -3,5 +3,6 @@
 
     <dimen name="cameraview_control_size">80dp</dimen>
     <dimen name="cameraview_control_size_small">52dp</dimen>
+    <dimen name="cameraview_control_padding">12dp</dimen>
     <dimen name="cameraview_focus_size">80dp</dimen>
 </resources>

@@ -3,6 +3,7 @@ package com.rosberry.camera.view
 import android.animation.LayoutTransition
 import android.content.ContentValues
 import android.content.Context
+import android.content.res.Configuration
 import android.media.Image
 import android.net.Uri
 import android.util.AttributeSet
@@ -42,7 +43,7 @@ class CameraView @JvmOverloads constructor(
     private val textZoom by lazy { findViewById<TextView>(R.id.cameraview_text_zoom) }
     private val preview by lazy { findViewById<PreviewView>(R.id.cameraview_preview) }
     private val slider by lazy { findViewById<Slider>(R.id.cameraview_slider) }
-    private val textCallback by lazy { Runnable { textZoom.isInvisible = true } }
+    private val textCallback by lazy { Runnable { textZoom.isVisible = false } }
     private val format: DecimalFormat by lazy { DecimalFormat("#.#").apply { roundingMode = RoundingMode.HALF_UP } }
 
     init {
@@ -59,6 +60,46 @@ class CameraView @JvmOverloads constructor(
         btnSwitch.setOnClickListener { controller.switchCamera() }
         focus.setOnClickListener { controller.resetAutoFocus() }
         slider.addOnChangeListener { _, value, fromUser -> if (fromUser) controller.setLinearZoom(value) }
+    }
+
+    override fun onFlashModeChanged(mode: FlashMode) {
+        btnFlash.isVisible = mode != FlashMode.NONE
+
+        when (mode) {
+            FlashMode.OFF -> R.drawable.ic_cameraview_flash_off
+            FlashMode.AUTO -> R.drawable.ic_cameraview_flash_auto
+            FlashMode.ON -> R.drawable.ic_cameraview_flash_on
+            else -> return
+        }.run { btnFlash.setImageDrawable(ResourcesCompat.getDrawable(resources, this, context.theme)) }
+
+    }
+
+    override fun onCameraFocusChanged(x: Float, y: Float) {
+        focus.x = x - focus.width / 2f
+        focus.y = y - focus.height / 2f
+        focus.isVisible = true
+    }
+
+    override fun onCameraFocusReset() {
+        focus.isVisible = false
+    }
+
+    override fun onZoomRatioChanged(zoom: Float) {
+        textZoom.text = context.getString(R.string.camera_zoom_template, format.format(zoom))
+    }
+
+    override fun onLinearZoomChanged(zoom: Float) {
+        slider.value = zoom
+        btnReset.isVisible = zoom > 0
+        textZoom.run {
+            isVisible = true
+            removeCallbacks(textCallback)
+            postDelayed(textCallback, 500L)
+        }
+    }
+
+    override fun onCameraCountAvailable(count: Int) {
+        btnSwitch.isVisible = count > 1
     }
 
     fun start(lifecycleOwner: LifecycleOwner) {
@@ -100,44 +141,5 @@ class CameraView @JvmOverloads constructor(
             ImageCapture.OutputFileOptions.Builder(context.contentResolver, saveCollection, contentValues).build(),
             callback
         )
-    }
-
-    override fun onFlashModeChanged(mode: FlashMode) {
-        btnFlash.isVisible = mode != FlashMode.NONE
-
-        when (mode) {
-            FlashMode.OFF -> R.drawable.ic_cameraview_flash_off
-            FlashMode.AUTO -> R.drawable.ic_cameraview_flash_auto
-            FlashMode.ON -> R.drawable.ic_cameraview_flash_on
-            else -> return
-        }.run { btnFlash.setImageDrawable(ResourcesCompat.getDrawable(resources, this, context.theme)) }
-
-    }
-
-    override fun onCameraFocusChanged(x: Float, y: Float) {
-        focus.x = x - focus.width / 2f
-        focus.y = y - focus.height / 2f
-        focus.isVisible = true
-    }
-
-    override fun onCameraFocusReset() {
-        focus.isVisible = false
-    }
-
-    override fun onZoomRatioChanged(zoom: Float) {
-        textZoom.text = context.getString(R.string.camera_zoom_template, format.format(zoom))
-    }
-
-    override fun onLinearZoomChanged(zoom: Float) {
-        slider.value = zoom
-        textZoom.run {
-            isInvisible = false
-            removeCallbacks(textCallback)
-            postDelayed(textCallback, 500L)
-        }
-    }
-
-    override fun onCameraCountAvailable(count: Int) {
-        btnSwitch.isVisible = count > 1
     }
 }

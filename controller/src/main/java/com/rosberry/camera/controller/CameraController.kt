@@ -261,8 +261,9 @@ class CameraController(private val context: Context) {
             provider?.unbindAll()
             lifecycleOwner?.get()
                 ?.let { lifecycleOwner ->
+                    camera?.cameraInfo?.zoomState?.removeObservers(lifecycleOwner)
                     camera = provider?.bindToLifecycle(lifecycleOwner, getCameraSelector(), preview, imageCapture)
-                    camera?.cameraInfo?.zoomState?.observe(lifecycleOwner) { onZoomStateChanged(it) }
+                    camera?.cameraInfo?.zoomState?.observe(lifecycleOwner) { state -> onZoomStateChanged(state) }
                     setFlashMode(flashMode)
                     resetAutoFocus()
                 }

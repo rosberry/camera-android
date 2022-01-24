@@ -90,7 +90,7 @@ class CameraView @JvmOverloads constructor(
 
     override fun onLinearZoomChanged(zoom: Float) {
         slider.value = zoom
-        btnReset.isVisible = zoom > 0
+        btnReset?.isVisible = zoom > 0
         textZoom.run {
             isVisible = true
             removeCallbacks(textCallback)

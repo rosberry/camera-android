@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@android:color/white">
+    <item
+        android:bottom="@dimen/cameraview_control_padding"
+        android:left="@dimen/cameraview_control_padding"
+        android:right="@dimen/cameraview_control_padding"
+        android:top="@dimen/cameraview_control_padding">
+        <shape android:shape="oval">
+            <solid android:color="#4D000000" />
+        </shape>
+    </item>
+</ripple>

@@ -31,10 +31,14 @@
         app:layout_constraintTop_toBottomOf="@id/cameraview_preview" />
 
     <androidx.constraintlayout.widget.Guideline android:id="@+id/cameraview_guide"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         app:layout_constraintGuide_end="180dp" />
 
     <androidx.constraintlayout.widget.Barrier android:id="@+id/cameraview_barrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         app:barrierDirection="top"
         app:constraint_referenced_ids="cameraview_space,cameraview_guide" />
 

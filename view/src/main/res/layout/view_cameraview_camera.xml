@@ -13,6 +13,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0"
         tools:background="@android:color/darker_gray" />
 
     <View android:id="@+id/cameraview_focus"
@@ -23,22 +24,19 @@
         tools:ignore="MissingConstraints"
         tools:visibility="visible" />
 
-    <TextView android:id="@+id/cameraview_btn_reset"
-        style="@style/CameraViewButton.Padded"
-        android:layout_width="wrap_content"
+    <Space android:id="@+id/cameraview_space"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="12dp"
-        android:gravity="center"
-        android:padding="20dp"
-        android:text="@string/camera_zoom_reset"
-        android:textColor="@android:color/white"
-        android:textSize="12sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/cameraview_btn_shutter"
-        app:layout_constraintDimensionRatio="1"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:visibility="visible" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cameraview_preview" />
+
+    <androidx.constraintlayout.widget.Guideline android:id="@+id/cameraview_guide"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_end="180dp" />
+
+    <androidx.constraintlayout.widget.Barrier android:id="@+id/cameraview_barrier"
+        app:barrierDirection="top"
+        app:constraint_referenced_ids="cameraview_space,cameraview_guide" />
 
     <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/cameraview_btn_flash"
         style="@style/CameraViewButton.Padded"
@@ -50,10 +48,10 @@
 
     <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/cameraview_btn_shutter"
         style="@style/CameraViewButton.Shutter"
-        android:layout_marginBottom="50dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/cameraview_barrier" />
 
     <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/cameraview_btn_switch"
         style="@style/CameraViewButton.Padded"
@@ -86,10 +84,10 @@
         android:textColor="@android:color/white"
         android:textSize="32sp"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@id/cameraview_btn_shutter"
+        app:layout_constraintBottom_toBottomOf="@id/cameraview_preview"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toTopOf="@id/cameraview_preview"
         tools:text="@string/camera_zoom_template"
         tools:visibility="visible" />
 </merge>

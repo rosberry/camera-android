@@ -3,8 +3,6 @@ package com.rosberry.camera.view
 import android.animation.LayoutTransition
 import android.content.ContentValues
 import android.content.Context
-import android.content.res.Configuration
-import android.media.Image
 import android.net.Uri
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -15,7 +13,6 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.view.PreviewView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.slider.Slider
@@ -38,7 +35,6 @@ class CameraView @JvmOverloads constructor(
     private val btnFlash by lazy { findViewById<ImageButton>(R.id.cameraview_btn_flash) }
     private val btnShutter by lazy { findViewById<ImageButton>(R.id.cameraview_btn_shutter) }
     private val btnSwitch by lazy { findViewById<ImageButton>(R.id.cameraview_btn_switch) }
-    private val btnReset by lazy { findViewById<TextView>(R.id.cameraview_btn_reset) }
     private val focus by lazy { findViewById<View>(R.id.cameraview_focus) }
     private val textZoom by lazy { findViewById<TextView>(R.id.cameraview_text_zoom) }
     private val preview by lazy { findViewById<PreviewView>(R.id.cameraview_preview) }
@@ -56,7 +52,6 @@ class CameraView @JvmOverloads constructor(
             setCallback(this@CameraView)
         }
         btnFlash.setOnClickListener { controller.cycleFlashMode() }
-        btnReset?.setOnClickListener { controller.setLinearZoom(0f) }
         btnSwitch.setOnClickListener { controller.switchCamera() }
         focus.setOnClickListener { controller.resetAutoFocus() }
         slider.addOnChangeListener { _, value, fromUser -> if (fromUser) controller.setLinearZoom(value) }
@@ -90,7 +85,6 @@ class CameraView @JvmOverloads constructor(
 
     override fun onLinearZoomChanged(zoom: Float) {
         slider.value = zoom
-        btnReset?.isVisible = zoom > 0
         textZoom.run {
             isVisible = true
             removeCallbacks(textCallback)

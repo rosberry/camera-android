@@ -11,6 +11,7 @@
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:background="@android:color/darker_gray" />
@@ -48,6 +49,16 @@
         app:layout_constraintTop_toBottomOf="@id/cameraview_btn_shutter"
         tools:visibility="visible" />
 
+    <Space android:id="@+id/cameraview_space"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/cameraview_preview" />
+
+    <androidx.constraintlayout.widget.Barrier android:id="@+id/cameraview_barrier"
+        app:barrierDirection="start"
+        app:constraint_referenced_ids="cameraview_btn_shutter,cameraview_space" />
+
     <com.google.android.material.slider.Slider android:id="@+id/cameraview_slider"
         android:layout_width="200dp"
         android:layout_height="20dp"
@@ -56,7 +67,7 @@
         app:haloRadius="0dp"
         app:labelBehavior="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/cameraview_btn_shutter"
+        app:layout_constraintEnd_toStartOf="@id/cameraview_barrier"
         app:layout_constraintTop_toTopOf="parent"
         app:thumbColor="@color/camera_color_control"
         app:trackColor="#4D000000"
@@ -71,7 +82,7 @@
         android:textSize="32sp"
         android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/cameraview_btn_shutter"
+        app:layout_constraintEnd_toStartOf="@id/cameraview_barrier"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="@string/camera_zoom_template"
         tools:visibility="visible" />

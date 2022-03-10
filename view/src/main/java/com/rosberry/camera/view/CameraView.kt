@@ -4,6 +4,8 @@ import android.animation.LayoutTransition
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
+import android.os.Bundle
+import android.os.Parcelable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
@@ -14,6 +16,7 @@ import androidx.camera.view.PreviewView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.content.withStyledAttributes
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.slider.Slider
@@ -30,6 +33,11 @@ class CameraView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyle: Int = 0
 ) : ConstraintLayout(context, attrs, defStyle), CameraControllerCallback {
+
+    companion object {
+        private const val STATE_SUPER = "cameraview_state_super"
+        private const val STATE_FRONT_CAMERA = "cameraview_state_front_camera"
+    }
 
     private val controller = CameraController(context)
 
@@ -52,13 +60,27 @@ class CameraView @JvmOverloads constructor(
         controller.run {
             isTapToFocusEnabled = true
             setPreviewView(preview)
-            setAvailableFlashModes(arrayOf(FlashMode.OFF, FlashMode.AUTO, FlashMode.ON))
+            setAvailableFlashModes(FlashMode.OFF, FlashMode.AUTO, FlashMode.ON)
             setCallback(this@CameraView)
         }
         btnFlash.setOnClickListener { controller.cycleFlashMode() }
         btnSwitch.setOnClickListener { controller.switchCamera() }
         focus.setOnClickListener { controller.resetAutoFocus() }
         slider.addOnChangeListener { _, value, fromUser -> if (fromUser) controller.setLinearZoom(value) }
+    }
+
+    override fun onSaveInstanceState(): Parcelable {
+        return bundleOf(
+            STATE_SUPER to super.onSaveInstanceState(),
+            STATE_FRONT_CAMERA to controller.isFrontCameraPreferred
+        )
+    }
+
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        (state as? Bundle)?.run {
+            controller.setFrontCameraPreferred(getBoolean(STATE_FRONT_CAMERA))
+            super.onRestoreInstanceState(getParcelable(STATE_SUPER))
+        } ?: super.onRestoreInstanceState(state)
     }
 
     override fun onFlashModeChanged(mode: FlashMode) {

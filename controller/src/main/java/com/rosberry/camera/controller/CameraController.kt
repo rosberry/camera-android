@@ -4,12 +4,10 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.util.Rational
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.Surface
 import android.view.View
-import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraUnavailableException
@@ -33,6 +31,12 @@ class CameraController(private val context: Context) {
      * Returns current camera flash mode.
      */
     var flashMode = FlashMode.OFF
+        private set
+
+    /**
+     * Returns is preferred camera is front camera.
+     */
+    var isFrontCameraPreferred = true
         private set
 
     /**
@@ -71,7 +75,7 @@ class CameraController(private val context: Context) {
     private val cameraTouchListener by lazy { TouchListener() }
     private val cameraGestureDetector by lazy { ScaleGestureDetector(context, ScaleGestureListener()) }
 
-    private var flashModes: Array<FlashMode> = FlashMode.values()
+    private var flashModes: Array<out FlashMode> = FlashMode.values()
     private var camera: Camera? = null
     private var callback: WeakReference<CameraControllerCallback>? = null
     private var imageCapture: ImageCapture? = null
@@ -79,7 +83,6 @@ class CameraController(private val context: Context) {
     private var preview: Preview? = null
     private var previewView: WeakReference<PreviewView>? = null
     private var provider: ProcessCameraProvider? = null
-    private var isFrontCameraPreferred = true
     private var isScaling = false
     private var hasFrontCamera = false
     private var hasBackCamera = false
@@ -130,11 +133,21 @@ class CameraController(private val context: Context) {
 
     /**
      * Switches between default front and back camera.
-     * @return true if current active camera is front camera
      */
     fun switchCamera() {
         isFrontCameraPreferred = !isFrontCameraPreferred
         bindCamera()
+    }
+
+    /**
+     * Controls whether preferred camera is front camera.
+     * Invoking this method will also attempt to rebind camera if preferred camera changed.
+     */
+    fun setFrontCameraPreferred(isFrontCameraPreferred: Boolean) {
+        if (this.isFrontCameraPreferred != isFrontCameraPreferred) {
+            this.isFrontCameraPreferred = isFrontCameraPreferred
+            bindCamera()
+        }
     }
 
     /**
@@ -182,16 +195,15 @@ class CameraController(private val context: Context) {
     }
 
     /**
-     *  Sets array of [FlashMode]s available to cycle via `cycleFlashMode()` call.
+     *  Sets [FlashMode]s available to cycle via `cycleFlashMode()` invocation.
      *
-     *  Pass `null` argument to set all available flash modes.
+     *  Pass no arguments to set all available flash modes.
      *
      *  @throws IllegalStateException when provided with empty collection.
      *  @see cycleFlashMode
      */
-    fun setAvailableFlashModes(modes: Array<FlashMode>?) {
-        if (modes?.isEmpty() == true) throw IllegalArgumentException()
-        flashModes = modes ?: FlashMode.values()
+    fun setAvailableFlashModes(vararg modes: FlashMode) {
+        flashModes = if (modes.isEmpty()) FlashMode.values() else modes
     }
 
     /**
@@ -268,8 +280,7 @@ class CameraController(private val context: Context) {
                     camera?.cameraInfo?.zoomState?.observe(lifecycleOwner) { state -> onZoomStateChanged(state) }
                     setFlashMode(flashMode)
                     resetAutoFocus()
-                }
-                ?: throw IllegalStateException()
+                } ?: throw IllegalStateException()
         } catch (e: Exception) {
             e.printStackTrace()
         }

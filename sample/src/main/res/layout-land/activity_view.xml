@@ -6,7 +6,7 @@
 
     <com.rosberry.camera.view.CameraView android:id="@+id/camera_view"
         android:layout_width="match_parent"
-        app:previewRatio="3:4"
+        app:previewRatio="4:3"
         android:layout_height="match_parent" />
 
     <ImageView android:id="@+id/image_preview"

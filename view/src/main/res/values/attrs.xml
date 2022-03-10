@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CameraView">
+        <!-- Relation between camera preview height and width -->
+        <attr name="previewRatio" format="string" />
+    </declare-styleable>
+</resources>

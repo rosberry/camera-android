@@ -13,6 +13,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.view.PreviewView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.content.withStyledAttributes
 import androidx.core.view.isVisible
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.slider.Slider
@@ -44,6 +45,9 @@ class CameraView @JvmOverloads constructor(
 
     init {
         LayoutInflater.from(context).inflate(R.layout.view_cameraview_camera, this)
+        context.withStyledAttributes(attrs, R.styleable.CameraView, defStyle, 0) {
+            (preview.layoutParams as LayoutParams).dimensionRatio = getString(R.styleable.CameraView_previewRatio)
+        }
         this.layoutTransition = LayoutTransition()
         controller.run {
             isTapToFocusEnabled = true

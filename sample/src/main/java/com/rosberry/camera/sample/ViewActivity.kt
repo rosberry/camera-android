@@ -36,8 +36,6 @@ class ViewActivity : AppCompatActivity(), ImageCapture.OnImageSavedCallback {
 
     private lateinit var binding: ActivityViewBinding
 
-    private var hasGalleryPermission: Boolean? = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -72,10 +70,7 @@ class ViewActivity : AppCompatActivity(), ImageCapture.OnImageSavedCallback {
                 arrayOf("image/jpeg"),
                 null
             )
-        }
-            ?.run { contentResolver.openInputStream(this) }
-            ?.run { BitmapFactory.decodeStream(this, null, BitmapFactory.Options().apply { inSampleSize = 4 }) }
-            ?.run { runOnUiThread { binding.imagePreview.setImageBitmap(this) } }
+        }?.let(::showCapturedBitmap)
     }
 
     override fun onError(exception: ImageCaptureException) {

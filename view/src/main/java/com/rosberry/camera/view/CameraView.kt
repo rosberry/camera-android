@@ -3,6 +3,9 @@ package com.rosberry.camera.view
 import android.animation.LayoutTransition
 import android.content.ContentValues
 import android.content.Context
+import android.content.res.Configuration
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
@@ -11,9 +14,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageCapture
 import androidx.camera.view.PreviewView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.content.withStyledAttributes
 import androidx.core.os.bundleOf
@@ -51,22 +56,54 @@ class CameraView @JvmOverloads constructor(
     private val textCallback by lazy { Runnable { textZoom.isVisible = false } }
     private val format: DecimalFormat by lazy { DecimalFormat("#.#").apply { roundingMode = RoundingMode.HALF_UP } }
 
+    private var aspectRatio: Int = -1
+
     init {
         LayoutInflater.from(context).inflate(R.layout.view_cameraview_camera, this)
+        background = ColorDrawable(Color.BLACK)
         context.withStyledAttributes(attrs, R.styleable.CameraView, defStyle, 0) {
-            (preview.layoutParams as LayoutParams).dimensionRatio = getString(R.styleable.CameraView_previewRatio)
+            aspectRatio = getInt(R.styleable.CameraView_previewRatio, -1)
         }
         this.layoutTransition = LayoutTransition()
+        btnFlash.setOnClickListener { controller.cycleFlashMode() }
+        btnSwitch.setOnClickListener { controller.switchCamera() }
+        focus.setOnClickListener { controller.resetAutoFocus() }
+        slider.addOnChangeListener { _, value, fromUser -> if (fromUser) controller.setLinearZoom(value) }
+        setupPreview(aspectRatio)
         controller.run {
             isTapToFocusEnabled = true
             setPreviewView(preview)
             setAvailableFlashModes(FlashMode.OFF, FlashMode.AUTO, FlashMode.ON)
             setCallback(this@CameraView)
         }
-        btnFlash.setOnClickListener { controller.cycleFlashMode() }
-        btnSwitch.setOnClickListener { controller.switchCamera() }
-        focus.setOnClickListener { controller.resetAutoFocus() }
-        slider.addOnChangeListener { _, value, fromUser -> if (fromUser) controller.setLinearZoom(value) }
+    }
+
+    private fun setupPreview(aspectRatio: Int) {
+        var ratio = when (aspectRatio) {
+            AspectRatio.RATIO_16_9 -> 9 / 16f
+            AspectRatio.RATIO_4_3 -> 3 / 4f
+            else -> return
+        }
+
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        if (isLandscape) ratio = 1f / ratio
+
+        if (aspectRatio == AspectRatio.RATIO_4_3) {
+            ConstraintSet().run {
+                clone(this@CameraView)
+                if (isLandscape) {
+                    connect(R.id.cameraview_preview, ConstraintSet.END, R.id.cameraview_guide, ConstraintSet.START)
+                    setHorizontalBias(R.id.cameraview_preview, 0.5f)
+                } else {
+                    connect(R.id.cameraview_preview, ConstraintSet.BOTTOM, R.id.cameraview_guide, ConstraintSet.TOP)
+                    setVerticalBias(R.id.cameraview_preview, 0.5f)
+                }
+                applyTo(this@CameraView)
+            }
+        }
+
+        (preview.layoutParams as LayoutParams).dimensionRatio = ratio.toString()
     }
 
     override fun onSaveInstanceState(): Parcelable {
@@ -123,7 +160,11 @@ class CameraView @JvmOverloads constructor(
     }
 
     fun start(lifecycleOwner: LifecycleOwner) {
-        controller.start(lifecycleOwner, false)
+        controller.start(
+            lifecycleOwner,
+            false,
+            if (aspectRatio == 0) AspectRatio.RATIO_4_3 else AspectRatio.RATIO_16_9
+        )
     }
 
     fun setTakePhotoListener(listener: (() -> Unit)?) {

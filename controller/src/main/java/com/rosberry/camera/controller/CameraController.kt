@@ -8,6 +8,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.Surface
 import android.view.View
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraUnavailableException
@@ -108,7 +109,11 @@ class CameraController(private val context: Context) {
      * @param lifecycleOwner [LifecycleOwner] to bind camera use cases to
      * @param isFrontCamera controls whether preferred initial camera will be front camera, default value is `true`
      */
-    fun start(lifecycleOwner: LifecycleOwner, isFrontCamera: Boolean = this.isFrontCameraPreferred) {
+    fun start(
+        lifecycleOwner: LifecycleOwner,
+        isFrontCamera: Boolean = this.isFrontCameraPreferred,
+        @AspectRatio.Ratio aspectRatio: Int = AspectRatio.RATIO_4_3
+    ) {
         this.lifecycleOwner = WeakReference(lifecycleOwner)
         this.isFrontCameraPreferred = isFrontCamera
         ProcessCameraProvider
@@ -124,6 +129,7 @@ class CameraController(private val context: Context) {
                         .apply { setSurfaceProvider(previewView?.get()?.surfaceProvider) }
                     imageCapture = ImageCapture.Builder()
                         .setTargetRotation(rotation)
+                        .setTargetAspectRatio(aspectRatio)
                         .setFlashMode(getInternalFlashMode(flashMode))
                         .build()
                     bindCamera()

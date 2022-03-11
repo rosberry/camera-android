@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="CameraView">
-        <!-- Relation between camera preview height and width -->
-        <attr name="previewRatio" format="string" />
+        <!-- Relation between camera preview height and width. Default value is ratio_full -->
+        <attr name="previewRatio" format="enum">
+            <enum name="ratio_full" value="-1" />
+            <enum name="ratio_4_3" value="0" />
+            <enum name="ratio_16_9" value="1" />
+        </attr>
     </declare-styleable>
 </resources>

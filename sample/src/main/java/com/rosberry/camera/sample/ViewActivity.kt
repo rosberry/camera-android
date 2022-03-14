@@ -10,8 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.view.WindowInsetsController
-import android.view.WindowManager
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -20,11 +19,10 @@ import androidx.camera.core.ImageCaptureException
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toFile
-import com.rosberry.camera.sample.databinding.ActivityViewBinding
 import com.rosberry.camera.view.CameraView
 import java.io.File
 
-class ViewActivity : AppCompatActivity(), ImageCapture.OnImageSavedCallback {
+abstract class ViewActivity : AppCompatActivity(), ImageCapture.OnImageSavedCallback {
 
     companion object {
 
@@ -34,14 +32,17 @@ class ViewActivity : AppCompatActivity(), ImageCapture.OnImageSavedCallback {
         private const val DIR_NAME = "Camera Component"
     }
 
+    protected abstract val layoutId: Int
+
     private val isLegacySdk: Boolean get() = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
 
-    private lateinit var binding: ActivityViewBinding
+    private val camera: CameraView? by lazy { findViewById(R.id.camera_view) }
+    private val preview: ImageView? by lazy { findViewById(R.id.image_preview) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityViewBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setTheme(R.style.AppTheme_Camera)
+        setContentView(layoutId)
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == GRANTED &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == GRANTED
@@ -79,7 +80,7 @@ class ViewActivity : AppCompatActivity(), ImageCapture.OnImageSavedCallback {
     }
 
     private fun startCamera() {
-        binding.cameraView.run {
+        camera?.run {
             setTakePhotoListener { if (!isLegacySdk) takePicture() else takePictureLegacy() }
             start(this@ViewActivity)
         }
@@ -109,6 +110,6 @@ class ViewActivity : AppCompatActivity(), ImageCapture.OnImageSavedCallback {
         capturedUri
             ?.run { contentResolver.openInputStream(this) }
             ?.run { BitmapFactory.decodeStream(this, null, BitmapFactory.Options().apply { inSampleSize = 4 }) }
-            ?.run { runOnUiThread { binding.imagePreview.setImageBitmap(this) } }
+            ?.run { runOnUiThread { preview?.setImageBitmap(this) } }
     }
 }

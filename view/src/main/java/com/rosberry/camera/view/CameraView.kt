@@ -86,6 +86,7 @@ class CameraView @JvmOverloads constructor(
         }
 
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val screenRatio = if (isLandscape) getScreenRatio() else 1f / getScreenRatio()
 
         if (isLandscape) ratio = 1f / ratio
 
@@ -99,6 +100,13 @@ class CameraView @JvmOverloads constructor(
                     connect(R.id.cameraview_preview, ConstraintSet.BOTTOM, R.id.cameraview_guide, ConstraintSet.TOP)
                     setVerticalBias(R.id.cameraview_preview, 0.5f)
                 }
+                applyTo(this@CameraView)
+            }
+        } else if (screenRatio < 2.12f) {
+            ConstraintSet().run {
+                clone(this@CameraView)
+                if (isLandscape) setHorizontalBias(R.id.cameraview_preview, 0.5f)
+                else setVerticalBias(R.id.cameraview_preview, 0.5f)
                 applyTo(this@CameraView)
             }
         }
@@ -202,5 +210,9 @@ class CameraView @JvmOverloads constructor(
             ImageCapture.OutputFileOptions.Builder(context.contentResolver, saveCollection, contentValues).build(),
             callback
         )
+    }
+
+    private fun getScreenRatio(): Float {
+        return resources.configuration.run { screenWidthDp / screenHeightDp.toFloat() }
     }
 }

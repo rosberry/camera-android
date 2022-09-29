@@ -188,17 +188,11 @@ class CameraView @JvmOverloads constructor(
     }
 
     fun takePicture(file: File, callback: ImageCapture.OnImageSavedCallback) {
-        takePicture(
-            ImageCapture.OutputFileOptions.Builder(file).build(),
-            callback
-        )
+        takePicture(ImageCapture.OutputFileOptions.Builder(file).build(), callback)
     }
 
     fun takePicture(outputStream: OutputStream, callback: ImageCapture.OnImageSavedCallback) {
-        takePicture(
-            ImageCapture.OutputFileOptions.Builder(outputStream).build(),
-            callback
-        )
+        takePicture(ImageCapture.OutputFileOptions.Builder(outputStream).build(), callback)
     }
 
     fun takePicture(

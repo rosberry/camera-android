@@ -27,7 +27,6 @@ abstract class ViewActivity : AppCompatActivity(), ImageCapture.OnImageSavedCall
     companion object {
 
         private const val REQUEST_CODE_CAMERA = 407
-
         private const val GRANTED = PackageManager.PERMISSION_GRANTED
         private const val DIR_NAME = "Camera Component"
     }

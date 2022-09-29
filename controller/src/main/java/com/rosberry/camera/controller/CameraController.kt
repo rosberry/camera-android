@@ -313,8 +313,8 @@ class CameraController(private val context: Context) {
         previewView?.get()
             ?.run {
                 val reset = focusX == null && focusY == null
-                val x = focusX ?: width / 2f
-                val y = focusY ?: height / 2f
+                val x = focusX ?: (width / 2f)
+                val y = focusY ?: (height / 2f)
                 val point = meteringPointFactory.createPoint(x, y)
                 val action = FocusMeteringAction.Builder(point)
                     .build()

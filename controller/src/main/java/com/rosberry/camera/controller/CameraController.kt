@@ -339,9 +339,9 @@ class CameraController(private val context: Context) {
     }
 
     private inner class TouchListener : View.OnTouchListener {
-        override fun onTouch(view: View?, event: MotionEvent?): Boolean {
+        override fun onTouch(view: View?, event: MotionEvent): Boolean {
             if (isPinchZoomEnabled) cameraGestureDetector.onTouchEvent(event)
-            if (event?.action == MotionEvent.ACTION_UP) {
+            if (event.action == MotionEvent.ACTION_UP) {
                 if (!isScaling && isTapToFocusEnabled) setAFPoint(event.x, event.y)
                 isScaling = false
             }
@@ -351,15 +351,14 @@ class CameraController(private val context: Context) {
     }
 
     private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScale(detector: ScaleGestureDetector?): Boolean {
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
             val zoom = camera?.cameraInfo?.zoomState?.value?.zoomRatio ?: 1f
-            val scale = detector?.scaleFactor ?: 1f
 
-            camera?.cameraControl?.setZoomRatio(zoom * scale)
+            camera?.cameraControl?.setZoomRatio(zoom * detector.scaleFactor)
             return true
         }
 
-        override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
+        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             isScaling = true
             return true
         }

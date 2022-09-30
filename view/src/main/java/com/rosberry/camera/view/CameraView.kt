@@ -78,40 +78,11 @@ class CameraView @JvmOverloads constructor(
         }
     }
 
-    private fun setupPreview(aspectRatio: Int) {
-        var ratio = when (aspectRatio) {
-            AspectRatio.RATIO_16_9 -> 9 / 16f
-            AspectRatio.RATIO_4_3 -> 3 / 4f
-            else -> return
-        }
-
-        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val screenRatio = if (isLandscape) getScreenRatio() else 1f / getScreenRatio()
-
-        if (isLandscape) ratio = 1f / ratio
-
-        if (aspectRatio == AspectRatio.RATIO_4_3) {
-            ConstraintSet().run {
-                clone(this@CameraView)
-                if (isLandscape) {
-                    connect(R.id.cameraview_preview, ConstraintSet.END, R.id.cameraview_guide, ConstraintSet.START)
-                    setHorizontalBias(R.id.cameraview_preview, 0.5f)
-                } else {
-                    connect(R.id.cameraview_preview, ConstraintSet.BOTTOM, R.id.cameraview_guide, ConstraintSet.TOP)
-                    setVerticalBias(R.id.cameraview_preview, 0.5f)
-                }
-                applyTo(this@CameraView)
-            }
-        } else if (screenRatio < 2.12f) {
-            ConstraintSet().run {
-                clone(this@CameraView)
-                if (isLandscape) setHorizontalBias(R.id.cameraview_preview, 0.5f)
-                else setVerticalBias(R.id.cameraview_preview, 0.5f)
-                applyTo(this@CameraView)
-            }
-        }
-
-        (preview.layoutParams as LayoutParams).dimensionRatio = ratio.toString()
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        (state as? Bundle)?.run {
+            controller.setFrontCameraPreferred(getBoolean(STATE_FRONT_CAMERA))
+            super.onRestoreInstanceState(getParcelable(STATE_SUPER))
+        } ?: super.onRestoreInstanceState(state)
     }
 
     override fun onSaveInstanceState(): Parcelable {
@@ -119,13 +90,6 @@ class CameraView @JvmOverloads constructor(
             STATE_SUPER to super.onSaveInstanceState(),
             STATE_FRONT_CAMERA to controller.isFrontCameraPreferred
         )
-    }
-
-    override fun onRestoreInstanceState(state: Parcelable?) {
-        (state as? Bundle)?.run {
-            controller.setFrontCameraPreferred(getBoolean(STATE_FRONT_CAMERA))
-            super.onRestoreInstanceState(getParcelable(STATE_SUPER))
-        } ?: super.onRestoreInstanceState(state)
     }
 
     override fun onFlashModeChanged(mode: FlashMode) {
@@ -175,6 +139,10 @@ class CameraView @JvmOverloads constructor(
         )
     }
 
+    fun stop() {
+        controller.stop()
+    }
+
     fun setTakePhotoListener(listener: (() -> Unit)?) {
         btnShutter.setOnClickListener { listener?.invoke() }
     }
@@ -204,6 +172,42 @@ class CameraView @JvmOverloads constructor(
             ImageCapture.OutputFileOptions.Builder(context.contentResolver, saveCollection, contentValues).build(),
             callback
         )
+    }
+
+    private fun setupPreview(aspectRatio: Int) {
+        var ratio = when (aspectRatio) {
+            AspectRatio.RATIO_16_9 -> 9 / 16f
+            AspectRatio.RATIO_4_3 -> 3 / 4f
+            else -> return
+        }
+
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val screenRatio = if (isLandscape) getScreenRatio() else 1f / getScreenRatio()
+
+        if (isLandscape) ratio = 1f / ratio
+
+        if (aspectRatio == AspectRatio.RATIO_4_3) {
+            ConstraintSet().run {
+                clone(this@CameraView)
+                if (isLandscape) {
+                    connect(R.id.cameraview_preview, ConstraintSet.END, R.id.cameraview_guide, ConstraintSet.START)
+                    setHorizontalBias(R.id.cameraview_preview, 0.5f)
+                } else {
+                    connect(R.id.cameraview_preview, ConstraintSet.BOTTOM, R.id.cameraview_guide, ConstraintSet.TOP)
+                    setVerticalBias(R.id.cameraview_preview, 0.5f)
+                }
+                applyTo(this@CameraView)
+            }
+        } else if (screenRatio < 2.12f) {
+            ConstraintSet().run {
+                clone(this@CameraView)
+                if (isLandscape) setHorizontalBias(R.id.cameraview_preview, 0.5f)
+                else setVerticalBias(R.id.cameraview_preview, 0.5f)
+                applyTo(this@CameraView)
+            }
+        }
+
+        (preview.layoutParams as LayoutParams).dimensionRatio = ratio.toString()
     }
 
     private fun getScreenRatio(): Float {

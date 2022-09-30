@@ -8,6 +8,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.Surface
 import android.view.View
+import androidx.annotation.MainThread
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -71,7 +72,7 @@ class CameraController(private val context: Context) {
     private val isFlashLightAvailable get() = camera?.cameraInfo?.hasFlashUnit() == true
 
     private val captureExecutor by lazy { Executors.newSingleThreadExecutor() }
-    private val fromCameraSelector by lazy { CameraSelector.DEFAULT_FRONT_CAMERA }
+    private val frontCameraSelector by lazy { CameraSelector.DEFAULT_FRONT_CAMERA }
     private val backCameraSelector by lazy { CameraSelector.DEFAULT_BACK_CAMERA }
     private val cameraTouchListener by lazy { TouchListener() }
     private val cameraGestureDetector by lazy { ScaleGestureDetector(context, ScaleGestureListener()) }
@@ -106,6 +107,7 @@ class CameraController(private val context: Context) {
 
     /**
      * Creates preview and capture use cases and binds them to lifecycle owner.
+     *
      * @param lifecycleOwner [LifecycleOwner] to bind camera use cases to
      * @param isFrontCamera controls whether preferred initial camera will be front camera, default value is `true`
      */
@@ -114,6 +116,8 @@ class CameraController(private val context: Context) {
         isFrontCamera: Boolean = this.isFrontCameraPreferred,
         @AspectRatio.Ratio aspectRatio: Int = AspectRatio.RATIO_4_3
     ) {
+        if (provider != null) return
+
         this.lifecycleOwner = WeakReference(lifecycleOwner)
         this.isFrontCameraPreferred = isFrontCamera
         ProcessCameraProvider
@@ -122,7 +126,7 @@ class CameraController(private val context: Context) {
                 addListener({
                     provider = get()
                     provider?.availableCameraInfos?.let { callback?.get()?.onCameraCountAvailable(it.size) }
-                    hasFrontCamera = provider?.hasCamera(fromCameraSelector) == true
+                    hasFrontCamera = provider?.hasCamera(frontCameraSelector) == true
                     hasBackCamera = provider?.hasCamera(backCameraSelector) == true
                     preview = Preview.Builder()
                         .build()
@@ -135,6 +139,21 @@ class CameraController(private val context: Context) {
                     bindCamera()
                 }, ContextCompat.getMainExecutor(context))
             }
+    }
+
+    /**
+     * Unbinds all use cases from the lifecycle and removes them from CameraX
+     * if it's necessary to release camera before [LifecycleOwner] passed to [start] method reaches
+     * `Lifecycle.State.DESTROYED`
+     *
+     * @throws IllegalStateException If not called on main thread.
+     * @see ProcessCameraProvider.unbindAll
+     * @see start
+     */
+    @MainThread
+    fun stop() {
+        provider?.unbindAll()
+        provider = null
     }
 
     /**
@@ -158,6 +177,7 @@ class CameraController(private val context: Context) {
 
     /**
      * Sets current camera linear zoom level.
+     *
      * @param zoom linear zoom value from 0 to 1, it will be coerced to the nearest value if out of bounds
      * @see androidx.camera.core.CameraControl.setLinearZoom
      */
@@ -167,6 +187,7 @@ class CameraController(private val context: Context) {
 
     /**
      * Sets current camera zoom ratio.
+     *
      * @param zoomRatio zoom ratio value, it will be coerced to the minimum/maximum available value if out of bounds
      */
     fun setZoomRatio(zoomRatio: Float) {
@@ -196,8 +217,7 @@ class CameraController(private val context: Context) {
         }
         imageCapture?.flashMode = getInternalFlashMode(mode)
         camera?.cameraControl?.enableTorch(flashMode == FlashMode.TORCH)
-        callback?.get()
-            ?.onFlashModeChanged(flashMode)
+        callback?.get()?.onFlashModeChanged(flashMode)
     }
 
     /**
@@ -214,6 +234,7 @@ class CameraController(private val context: Context) {
 
     /**
      * Cycles through available flash modes.
+     *
      * If the camera have no flashlight available, flash mode will be set to `FlashMode.NONE`.
      * Default value is `FlashMode.OFF`.
      *
@@ -228,6 +249,7 @@ class CameraController(private val context: Context) {
 
     /**
      * Captures a new still image for in memory access.
+     *
      * @see ImageCapture.takePicture
      */
     fun takePicture(callback: ImageCapture.OnImageCapturedCallback) {
@@ -236,6 +258,7 @@ class CameraController(private val context: Context) {
 
     /**
      * Captures a new still image and saves to a file along with application specified metadata.
+     * 
      * @see ImageCapture.OutputFileOptions
      */
     fun takePicture(
@@ -248,7 +271,10 @@ class CameraController(private val context: Context) {
     /**
      * Captures a new still image and saves to provided file.
      */
-    fun takePicture(file: File, callback: ImageCapture.OnImageSavedCallback) {
+    fun takePicture(
+        file: File,
+        callback: ImageCapture.OnImageSavedCallback
+    ) {
         val options = ImageCapture.OutputFileOptions.Builder(file)
             .build()
         takePicture(options, callback)
@@ -257,7 +283,10 @@ class CameraController(private val context: Context) {
     /**
      * Captures a new still image and writes to provided output stream.
      */
-    fun takePicture(outputStream: OutputStream, callback: ImageCapture.OnImageSavedCallback) {
+    fun takePicture(
+        outputStream: OutputStream,
+        callback: ImageCapture.OnImageSavedCallback
+    ) {
         val options = ImageCapture.OutputFileOptions.Builder(outputStream)
             .build()
         takePicture(options, callback)
@@ -279,24 +308,24 @@ class CameraController(private val context: Context) {
     private fun bindCamera() {
         try {
             provider?.unbindAll()
-            lifecycleOwner?.get()
-                ?.let { lifecycleOwner ->
-                    camera?.cameraInfo?.zoomState?.removeObservers(lifecycleOwner)
-                    camera = provider?.bindToLifecycle(lifecycleOwner, getCameraSelector(), preview, imageCapture)
-                    camera?.cameraInfo?.zoomState?.observe(lifecycleOwner) { state -> onZoomStateChanged(state) }
-                    setFlashMode(flashMode)
-                    resetAutoFocus()
-                } ?: throw IllegalStateException()
+            lifecycleOwner?.get()?.let { lifecycleOwner ->
+                camera?.cameraInfo?.zoomState?.removeObservers(lifecycleOwner)
+                camera = provider?.bindToLifecycle(lifecycleOwner, getCameraSelector(), preview, imageCapture)
+                camera?.cameraInfo?.zoomState?.observe(lifecycleOwner, ::onZoomStateChanged)
+                setFlashMode(flashMode)
+                resetAutoFocus()
+            } ?: throw IllegalStateException()
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
+    @Throws(CameraUnavailableException::class)
     private fun getCameraSelector(): CameraSelector {
         return when {
-            isFrontCameraPreferred && hasFrontCamera -> fromCameraSelector
+            isFrontCameraPreferred && hasFrontCamera -> frontCameraSelector
             hasBackCamera -> backCameraSelector
-            hasFrontCamera -> fromCameraSelector
+            hasFrontCamera -> frontCameraSelector
             else -> throw CameraUnavailableException(CameraUnavailableException.CAMERA_UNKNOWN_ERROR)
         }
     }
@@ -309,33 +338,33 @@ class CameraController(private val context: Context) {
         }
     }
 
-    private fun setAFPoint(focusX: Float? = null, focusY: Float? = null) {
-        previewView?.get()
-            ?.run {
-                val reset = focusX == null && focusY == null
-                val x = focusX ?: (width / 2f)
-                val y = focusY ?: (height / 2f)
-                val point = meteringPointFactory.createPoint(x, y)
-                val action = FocusMeteringAction.Builder(point)
-                    .build()
-                camera?.cameraControl?.startFocusAndMetering(action)
+    private fun setAFPoint(
+        focusX: Float? = null,
+        focusY: Float? = null
+    ) {
+        previewView?.get()?.run {
+            val reset = focusX == null && focusY == null
+            val x = focusX ?: (width / 2f)
+            val y = focusY ?: (height / 2f)
+            val point = meteringPointFactory.createPoint(x, y)
+            val action = FocusMeteringAction.Builder(point)
+                .build()
 
-                callback?.get()
-                    ?.apply {
-                        when (reset) {
-                            true -> onCameraFocusReset()
-                            false -> onCameraFocusChanged(x, y)
-                        }
-                    }
+            camera?.cameraControl?.startFocusAndMetering(action)
+            callback?.get()?.apply {
+                when (reset) {
+                    true -> onCameraFocusReset()
+                    false -> onCameraFocusChanged(x, y)
+                }
             }
+        }
     }
 
     private fun onZoomStateChanged(zoomState: ZoomState) {
-        callback?.get()
-            ?.apply {
-                onLinearZoomChanged(zoomState.linearZoom)
-                onZoomRatioChanged(zoomState.zoomRatio)
-            }
+        callback?.get()?.apply {
+            onLinearZoomChanged(zoomState.linearZoom)
+            onZoomRatioChanged(zoomState.zoomRatio)
+        }
     }
 
     private inner class TouchListener : View.OnTouchListener {

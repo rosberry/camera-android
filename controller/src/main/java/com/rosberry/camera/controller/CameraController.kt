@@ -24,10 +24,11 @@ import androidx.lifecycle.LifecycleOwner
 import java.io.File
 import java.io.OutputStream
 import java.lang.ref.WeakReference
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
 @SuppressLint("ClickableViewAccessibility")
-class CameraController(private val context: Context) {
+open class CameraController(private val context: Context) {
 
     /**
      * Returns current camera flash mode.
@@ -46,7 +47,7 @@ class CameraController(private val context: Context) {
      */
     var isTapToFocusEnabled: Boolean = false
         set(value) {
-            if (!value) setAFPoint()
+            if (!value) resetAutoFocus()
             field = value
         }
 
@@ -69,32 +70,40 @@ class CameraController(private val context: Context) {
             field = value
         }
 
-    private val isFlashLightAvailable get() = camera?.cameraInfo?.hasFlashUnit() == true
+    protected open val isFlashLightAvailable get() = camera?.cameraInfo?.hasFlashUnit() == true
 
-    private val captureExecutor by lazy { Executors.newSingleThreadExecutor() }
-    private val frontCameraSelector by lazy { CameraSelector.DEFAULT_FRONT_CAMERA }
-    private val backCameraSelector by lazy { CameraSelector.DEFAULT_BACK_CAMERA }
-    private val cameraTouchListener by lazy { TouchListener() }
-    private val cameraGestureDetector by lazy { ScaleGestureDetector(context, ScaleGestureListener()) }
+    protected val captureExecutor: Executor by lazy { Executors.newSingleThreadExecutor() }
+    protected val frontCameraSelector by lazy { CameraSelector.DEFAULT_FRONT_CAMERA }
+    protected val backCameraSelector by lazy { CameraSelector.DEFAULT_BACK_CAMERA }
+
+    protected var imageCapture: ImageCapture? = null
+        private set
 
     private var flashModes: Array<out FlashMode> = FlashMode.values()
     private var camera: Camera? = null
     private var callback: WeakReference<CameraControllerCallback>? = null
-    private var imageCapture: ImageCapture? = null
     private var lifecycleOwner: WeakReference<LifecycleOwner>? = null
     private var preview: Preview? = null
     private var previewView: WeakReference<PreviewView>? = null
     private var provider: ProcessCameraProvider? = null
-    private var isScaling = false
     private var hasFrontCamera = false
     private var hasBackCamera = false
 
+    private val cameraTouchListener by lazy { TouchListener() }
+
     /**
-     * Sets the [PreviewView] to provide a Surface for Preview.
+     * Sets the `PreviewView` to provide a Surface for Preview.
+     *
+     * @param previewView [PreviewView] used to display camera preview
+     * @param isTouchEnabled controls if `previewView` will be supplied with internal touch handler.
+     * Note that if set to `false` [isTapToFocusEnabled] and [isPinchZoomEnabled] values won't have effect
      */
-    fun setPreviewView(previewView: PreviewView) {
+    fun setPreviewView(
+        previewView: PreviewView,
+        isTouchEnabled: Boolean = true
+    ) {
         this.previewView = WeakReference(previewView).apply {
-            get()?.setOnTouchListener(cameraTouchListener)
+            if (isTouchEnabled) get()?.setOnTouchListener(cameraTouchListener)
         }
     }
 
@@ -159,6 +168,7 @@ class CameraController(private val context: Context) {
     /**
      * Switches between default front and back camera.
      */
+    @MainThread
     fun switchCamera() {
         isFrontCameraPreferred = !isFrontCameraPreferred
         bindCamera()
@@ -168,6 +178,7 @@ class CameraController(private val context: Context) {
      * Controls whether preferred camera is front camera.
      * Invoking this method will also attempt to rebind camera if preferred camera changed.
      */
+    @MainThread
     fun setFrontCameraPreferred(isFrontCameraPreferred: Boolean) {
         if (this.isFrontCameraPreferred != isFrontCameraPreferred) {
             this.isFrontCameraPreferred = isFrontCameraPreferred
@@ -201,7 +212,7 @@ class CameraController(private val context: Context) {
      * Resets auto-focus position to the middle of preview view.
      */
     fun resetAutoFocus() {
-        setAFPoint()
+        previewView?.get()?.setAFPoint()
     }
 
     /**
@@ -258,7 +269,7 @@ class CameraController(private val context: Context) {
 
     /**
      * Captures a new still image and saves to a file along with application specified metadata.
-     * 
+     *
      * @see ImageCapture.OutputFileOptions
      */
     fun takePicture(
@@ -305,6 +316,17 @@ class CameraController(private val context: Context) {
         takePicture(options, callback)
     }
 
+    @Throws(CameraUnavailableException::class)
+    protected fun getCameraSelector(): CameraSelector {
+        return when {
+            isFrontCameraPreferred && hasFrontCamera -> frontCameraSelector
+            hasBackCamera -> backCameraSelector
+            hasFrontCamera -> frontCameraSelector
+            else -> throw CameraUnavailableException(CameraUnavailableException.CAMERA_UNKNOWN_ERROR)
+        }
+    }
+
+    @MainThread
     private fun bindCamera() {
         try {
             provider?.unbindAll()
@@ -320,16 +342,6 @@ class CameraController(private val context: Context) {
         }
     }
 
-    @Throws(CameraUnavailableException::class)
-    private fun getCameraSelector(): CameraSelector {
-        return when {
-            isFrontCameraPreferred && hasFrontCamera -> frontCameraSelector
-            hasBackCamera -> backCameraSelector
-            hasFrontCamera -> frontCameraSelector
-            else -> throw CameraUnavailableException(CameraUnavailableException.CAMERA_UNKNOWN_ERROR)
-        }
-    }
-
     private fun getInternalFlashMode(mode: FlashMode): Int {
         return when (mode) {
             FlashMode.ON -> ImageCapture.FLASH_MODE_ON
@@ -338,24 +350,22 @@ class CameraController(private val context: Context) {
         }
     }
 
-    private fun setAFPoint(
+    private fun PreviewView.setAFPoint(
         focusX: Float? = null,
         focusY: Float? = null
     ) {
-        previewView?.get()?.run {
-            val reset = focusX == null && focusY == null
-            val x = focusX ?: (width / 2f)
-            val y = focusY ?: (height / 2f)
-            val point = meteringPointFactory.createPoint(x, y)
-            val action = FocusMeteringAction.Builder(point)
-                .build()
+        val x = focusX ?: (width / 2f)
+        val y = focusY ?: (height / 2f)
 
-            camera?.cameraControl?.startFocusAndMetering(action)
-            callback?.get()?.apply {
-                when (reset) {
-                    true -> onCameraFocusReset()
-                    false -> onCameraFocusChanged(x, y)
-                }
+        camera?.cameraControl?.startFocusAndMetering(
+            meteringPointFactory.createPoint(x, y)
+                .let(FocusMeteringAction::Builder)
+                .build()
+        )
+        callback?.get()?.apply {
+            when (focusX == null && focusY == null) {
+                true -> onCameraFocusReset()
+                false -> onCameraFocusChanged(x, y)
             }
         }
     }
@@ -368,28 +378,33 @@ class CameraController(private val context: Context) {
     }
 
     private inner class TouchListener : View.OnTouchListener {
+
+        private val cameraGestureDetector by lazy { ScaleGestureDetector(context, ScaleGestureListener()) }
+
+        private var isScaling = false
+
         override fun onTouch(view: View?, event: MotionEvent): Boolean {
             if (isPinchZoomEnabled) cameraGestureDetector.onTouchEvent(event)
             if (event.action == MotionEvent.ACTION_UP) {
-                if (!isScaling && isTapToFocusEnabled) setAFPoint(event.x, event.y)
+                if (!isScaling && isTapToFocusEnabled) previewView?.get()?.setAFPoint(event.x, event.y)
                 isScaling = false
             }
 
             return true
         }
-    }
 
-    private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            val zoom = camera?.cameraInfo?.zoomState?.value?.zoomRatio ?: 1f
+        private inner class ScaleGestureListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                val zoom = camera?.cameraInfo?.zoomState?.value?.zoomRatio ?: 1f
 
-            camera?.cameraControl?.setZoomRatio(zoom * detector.scaleFactor)
-            return true
-        }
+                camera?.cameraControl?.setZoomRatio(zoom * detector.scaleFactor)
+                return true
+            }
 
-        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-            isScaling = true
-            return true
+            override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+                isScaling = true
+                return true
+            }
         }
     }
 }

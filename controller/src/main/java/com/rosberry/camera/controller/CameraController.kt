@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.view.MotionEvent
+import android.view.OrientationEventListener
 import android.view.ScaleGestureDetector
 import android.view.Surface
 import android.view.View
@@ -20,6 +21,8 @@ import androidx.camera.core.ZoomState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import java.io.File
 import java.io.OutputStream
@@ -28,7 +31,9 @@ import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
 @SuppressLint("ClickableViewAccessibility")
-open class CameraController(private val context: Context) {
+open class CameraController(
+    private val context: Context
+) : LifecycleEventObserver {
 
     /**
      * Returns current camera flash mode.
@@ -62,6 +67,9 @@ open class CameraController(private val context: Context) {
      * Valid values: [Surface.ROTATION_0], [Surface.ROTATION_90], [Surface.ROTATION_180], [Surface.ROTATION_270].
      * Rotation values are relative to the "natural" rotation, [Surface.ROTATION_0].
      *
+     * Note that setting property manually might have no effect if `isOrientationListenerEnabled` was enabled
+     * when invoking [start].
+     *
      * @see ImageCapture.Builder.setTargetRotation
      */
     var rotation: Int = Surface.ROTATION_0
@@ -89,7 +97,16 @@ open class CameraController(private val context: Context) {
     private var hasFrontCamera: Boolean = false
     private var hasBackCamera: Boolean = false
 
-    private val cameraTouchListener by lazy { TouchListener() }
+    private val cameraTouchListener: View.OnTouchListener by lazy { TouchListener() }
+    private val orientationListener: OrientationEventListener by lazy { OrientationListener(context) }
+
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        when (event) {
+            Lifecycle.Event.ON_RESUME -> orientationListener.enable()
+            Lifecycle.Event.ON_PAUSE -> orientationListener.disable()
+            else -> return
+        }
+    }
 
     /**
      * Sets the `PreviewView` to provide a Surface for Preview.
@@ -119,16 +136,26 @@ open class CameraController(private val context: Context) {
      *
      * @param lifecycleOwner [LifecycleOwner] to bind camera use cases to
      * @param isFrontCamera controls whether preferred initial camera will be front camera, default value is `true`
+     * @param isOrientationListenerEnabled controls if internal [OrientationEventListener] bound to `lifecycleOwner`'s
+     * [Lifecycle] will update [rotation], default value is `true`
+     * @param aspectRatio desired [AspectRatio] for [ImageCapture] use case
+     *
+     * @see ImageCapture.Builder.setTargetRotation
+     * @see ImageCapture.Builder.setTargetAspectRatio
      */
     fun start(
         lifecycleOwner: LifecycleOwner,
         isFrontCamera: Boolean = this.isFrontCameraPreferred,
+        isOrientationListenerEnabled: Boolean = true,
         @AspectRatio.Ratio aspectRatio: Int = AspectRatio.RATIO_4_3
     ) {
         if (provider != null) return
 
-        this.lifecycleOwner = WeakReference(lifecycleOwner)
         this.isFrontCameraPreferred = isFrontCamera
+        this.lifecycleOwner = WeakReference(lifecycleOwner).apply {
+            if (isOrientationListenerEnabled) get()?.lifecycle?.addObserver(this@CameraController)
+        }
+        
         ProcessCameraProvider
             .getInstance(context)
             .run {
@@ -404,6 +431,19 @@ open class CameraController(private val context: Context) {
             override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
                 isScaling = true
                 return true
+            }
+        }
+    }
+
+    private inner class OrientationListener(context: Context) : OrientationEventListener(context) {
+
+        override fun onOrientationChanged(orientation: Int) {
+            rotation = when (orientation) {
+                ORIENTATION_UNKNOWN -> return
+                in 45 until 135 -> Surface.ROTATION_270
+                in 135 until 225 -> Surface.ROTATION_180
+                in 225 until 315 -> Surface.ROTATION_90
+                else -> Surface.ROTATION_0
             }
         }
     }

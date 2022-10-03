@@ -135,7 +135,7 @@ class CameraView @JvmOverloads constructor(
         controller.start(
             lifecycleOwner,
             false,
-            if (aspectRatio == 0) AspectRatio.RATIO_4_3 else AspectRatio.RATIO_16_9
+            aspectRatio = if (aspectRatio == 0) AspectRatio.RATIO_4_3 else AspectRatio.RATIO_16_9
         )
     }
 

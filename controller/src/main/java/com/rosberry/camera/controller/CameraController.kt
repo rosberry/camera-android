@@ -73,8 +73,8 @@ open class CameraController(private val context: Context) {
     protected open val isFlashLightAvailable get() = camera?.cameraInfo?.hasFlashUnit() == true
 
     protected val captureExecutor: Executor by lazy { Executors.newSingleThreadExecutor() }
-    protected val frontCameraSelector by lazy { CameraSelector.DEFAULT_FRONT_CAMERA }
-    protected val backCameraSelector by lazy { CameraSelector.DEFAULT_BACK_CAMERA }
+    protected val frontCameraSelector: CameraSelector by lazy { CameraSelector.DEFAULT_FRONT_CAMERA }
+    protected val backCameraSelector: CameraSelector by lazy { CameraSelector.DEFAULT_BACK_CAMERA }
 
     protected var imageCapture: ImageCapture? = null
         private set
@@ -86,8 +86,8 @@ open class CameraController(private val context: Context) {
     private var preview: Preview? = null
     private var previewView: WeakReference<PreviewView>? = null
     private var provider: ProcessCameraProvider? = null
-    private var hasFrontCamera = false
-    private var hasBackCamera = false
+    private var hasFrontCamera: Boolean = false
+    private var hasBackCamera: Boolean = false
 
     private val cameraTouchListener by lazy { TouchListener() }
 

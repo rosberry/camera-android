@@ -55,6 +55,7 @@ class CameraView @JvmOverloads constructor(
     private val slider by lazy { findViewById<Slider>(R.id.cameraview_slider) }
     private val textCallback by lazy { Runnable { textZoom.isVisible = false } }
     private val format: DecimalFormat by lazy { DecimalFormat("#.#").apply { roundingMode = RoundingMode.HALF_UP } }
+    private val focusRadius: Float by lazy { resources.getDimensionPixelSize(R.dimen.cameraview_focus_size) / 2f }
 
     private var aspectRatio: Int = -1
 
@@ -101,12 +102,11 @@ class CameraView @JvmOverloads constructor(
             FlashMode.ON -> R.drawable.ic_cameraview_flash_on
             else -> return
         }.run { btnFlash.setImageDrawable(ResourcesCompat.getDrawable(resources, this, context.theme)) }
-
     }
 
     override fun onCameraFocusChanged(x: Float, y: Float) {
-        focus.x = x - focus.width / 2f
-        focus.y = y - focus.height / 2f
+        focus.x = x - focusRadius
+        focus.y = y - focusRadius
         focus.isVisible = true
     }
 

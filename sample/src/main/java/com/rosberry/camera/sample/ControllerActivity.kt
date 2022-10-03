@@ -11,6 +11,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.net.toFile
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import com.rosberry.camera.controller.CameraController
@@ -23,40 +24,41 @@ import java.math.RoundingMode
 import java.text.DecimalFormat
 
 @SuppressLint("ClickableViewAccessibility")
-class ControllerActivity : AppCompatActivity(), CameraControllerCallback {
+class ControllerActivity : AppCompatActivity(), CameraControllerCallback, ImageCapture.OnImageSavedCallback {
 
     companion object {
 
         private const val REQUEST_CODE_CAMERA = 407
     }
 
-    private lateinit var binding: ActivityControllerBinding
-
     private val cameraController: CameraController by lazy { CameraController(this) }
+
+    private val textVisibilityCallback by lazy { Runnable { binding.textZoom.isInvisible = !isSliderVisible } }
 
     private val format = DecimalFormat("#.#").apply { roundingMode = RoundingMode.HALF_UP }
 
     private var isSliderVisible = false
 
-    private val textVisibilityCallback by lazy {
-        Runnable { binding.textZoom.isInvisible = !isSliderVisible }
-    }
+    private lateinit var binding: ActivityControllerBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityControllerBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        binding = ActivityControllerBinding
+            .inflate(layoutInflater)
+            .apply {
+                setContentView(root)
 
-        binding.btnTorch.setOnClickListener { toggleTorch() }
-        binding.btnShoot.setOnClickListener { takePicture() }
-        binding.btnCamera.setOnClickListener { switchCamera() }
-        binding.btnFocus.setOnClickListener { resetFocus() }
-        binding.btnPinch.setOnClickListener { togglePinchZoom() }
-        binding.btnPinch.alpha = if (cameraController.isPinchZoomEnabled) 1f else 0.3f
-        binding.btnZoom.setOnClickListener { toggleLinearZoom() }
-        binding.btnZoom.alpha = if (isSliderVisible) 1f else 0.3f
-        binding.slider.addOnChangeListener { _, value, fromUser -> if (fromUser) cameraController.setLinearZoom(value) }
+                btnTorch.setOnClickListener { toggleTorch() }
+                btnShoot.setOnClickListener { takePicture() }
+                btnCamera.setOnClickListener { switchCamera() }
+                btnFocus.setOnClickListener { resetFocus() }
+                btnPinch.setOnClickListener { togglePinchZoom() }
+                btnPinch.alpha = if (cameraController.isPinchZoomEnabled) 1f else 0.3f
+                btnZoom.setOnClickListener { toggleLinearZoom() }
+                btnZoom.alpha = if (isSliderVisible) 1f else 0.3f
+                slider.addOnChangeListener { _, value, fromUser -> if (fromUser) cameraController.setLinearZoom(value) }
+            }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             startCamera()
@@ -65,15 +67,25 @@ class ControllerActivity : AppCompatActivity(), CameraControllerCallback {
         }
     }
 
+    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+        outputFileResults.savedUri
+            ?.toFile()
+            ?.let(::showPreview)
+    }
+
+    override fun onError(exception: ImageCaptureException) {}
+
     private fun switchCamera() {
         cameraController.switchCamera()
     }
 
     private fun startCamera() {
-        cameraController.setPreviewView(binding.preview)
-        cameraController.isTapToFocusEnabled = true
-        cameraController.setCallback(this)
-        cameraController.start(this, false)
+        cameraController.run {
+            setPreviewView(binding.preview)
+            isTapToFocusEnabled = true
+            setCallback(this@ControllerActivity)
+            start(this@ControllerActivity, false)
+        }
     }
 
     private fun toggleTorch() {
@@ -85,14 +97,8 @@ class ControllerActivity : AppCompatActivity(), CameraControllerCallback {
     }
 
     private fun takePicture() {
-        val file = File.createTempFile("${System.currentTimeMillis()}", ".jpg")
-        cameraController.takePicture(file, object : ImageCapture.OnImageSavedCallback {
-            override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                showPreview(file)
-            }
-
-            override fun onError(exception: ImageCaptureException) {}
-        })
+        File.createTempFile("${System.currentTimeMillis()}", ".jpg")
+            .let { file -> cameraController.takePicture(file, this) }
     }
 
     private fun togglePinchZoom() {
@@ -108,13 +114,9 @@ class ControllerActivity : AppCompatActivity(), CameraControllerCallback {
     }
 
     private fun showPreview(file: File) {
-        FileInputStream(file).use {
-            val options = BitmapFactory.Options()
-            options.inSampleSize = 4
-
-            val bitmap = BitmapFactory.decodeStream(it, null, options)
-            runOnUiThread { binding.imagePreview.setImageBitmap(bitmap) }
-        }
+        FileInputStream(file)
+            .use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = 4 }) }
+            .let { bitmap -> runOnUiThread { binding.imagePreview.setImageBitmap(bitmap) } }
     }
 
     private fun onZoomChanged() {

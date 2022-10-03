@@ -83,6 +83,7 @@ open class CameraController(
     protected val captureExecutor: Executor by lazy { Executors.newSingleThreadExecutor() }
     protected val frontCameraSelector: CameraSelector by lazy { CameraSelector.DEFAULT_FRONT_CAMERA }
     protected val backCameraSelector: CameraSelector by lazy { CameraSelector.DEFAULT_BACK_CAMERA }
+    protected val preview: Preview by lazy { Preview.Builder().build() }
 
     protected var imageCapture: ImageCapture? = null
         private set
@@ -91,7 +92,6 @@ open class CameraController(
     private var camera: Camera? = null
     private var callback: WeakReference<CameraControllerCallback>? = null
     private var lifecycleOwner: WeakReference<LifecycleOwner>? = null
-    private var preview: Preview? = null
     private var previewView: WeakReference<PreviewView>? = null
     private var provider: ProcessCameraProvider? = null
     private var hasFrontCamera: Boolean = false
@@ -120,7 +120,11 @@ open class CameraController(
         isTouchEnabled: Boolean = true
     ) {
         this.previewView = WeakReference(previewView).apply {
-            if (isTouchEnabled) get()?.setOnTouchListener(cameraTouchListener)
+            get()?.let { previewView ->
+                if (isTouchEnabled) previewView.setOnTouchListener(cameraTouchListener)
+
+                preview.setSurfaceProvider(previewView.surfaceProvider)
+            }
         }
     }
 
@@ -155,26 +159,16 @@ open class CameraController(
         this.lifecycleOwner = WeakReference(lifecycleOwner).apply {
             if (isOrientationListenerEnabled) get()?.lifecycle?.addObserver(this@CameraController)
         }
-        
+
+        imageCapture = ImageCapture.Builder()
+            .setTargetRotation(rotation)
+            .setTargetAspectRatio(aspectRatio)
+            .setFlashMode(getInternalFlashMode(flashMode))
+            .build()
+
         ProcessCameraProvider
             .getInstance(context)
-            .run {
-                addListener({
-                    provider = get()
-                    provider?.availableCameraInfos?.let { callback?.get()?.onCameraCountAvailable(it.size) }
-                    hasFrontCamera = provider?.hasCamera(frontCameraSelector) == true
-                    hasBackCamera = provider?.hasCamera(backCameraSelector) == true
-                    preview = Preview.Builder()
-                        .build()
-                        .apply { setSurfaceProvider(previewView?.get()?.surfaceProvider) }
-                    imageCapture = ImageCapture.Builder()
-                        .setTargetRotation(rotation)
-                        .setTargetAspectRatio(aspectRatio)
-                        .setFlashMode(getInternalFlashMode(flashMode))
-                        .build()
-                    bindCamera()
-                }, ContextCompat.getMainExecutor(context))
-            }
+            .run { addListener({ onRetrieveProvider(get()) }, ContextCompat.getMainExecutor(context)) }
     }
 
     /**
@@ -198,18 +192,18 @@ open class CameraController(
     @MainThread
     fun switchCamera() {
         isFrontCameraPreferred = !isFrontCameraPreferred
-        bindCamera()
+        provider?.let(::bindCamera)
     }
 
     /**
      * Controls whether preferred camera is front camera.
-     * Invoking this method will also attempt to rebind camera if preferred camera changed.
+     * Invoking this method will also cause camera rebind if preferred camera changed.
      */
     @MainThread
     fun setFrontCameraPreferred(isFrontCameraPreferred: Boolean) {
         if (this.isFrontCameraPreferred != isFrontCameraPreferred) {
             this.isFrontCameraPreferred = isFrontCameraPreferred
-            bindCamera()
+            provider?.let(::bindCamera)
         }
     }
 
@@ -353,13 +347,21 @@ open class CameraController(
         }
     }
 
+    private fun onRetrieveProvider(provider: ProcessCameraProvider) {
+        this.provider = provider
+        hasFrontCamera = provider.hasCamera(frontCameraSelector)
+        hasBackCamera = provider.hasCamera(backCameraSelector)
+        callback?.get()?.onCameraCountAvailable(provider.availableCameraInfos.size)
+        bindCamera(provider)
+    }
+
     @MainThread
-    private fun bindCamera() {
+    private fun bindCamera(provider: ProcessCameraProvider) {
         try {
-            provider?.unbindAll()
+            provider.unbindAll()
             lifecycleOwner?.get()?.let { lifecycleOwner ->
                 camera?.cameraInfo?.zoomState?.removeObservers(lifecycleOwner)
-                camera = provider?.bindToLifecycle(lifecycleOwner, getCameraSelector(), preview, imageCapture)
+                camera = provider.bindToLifecycle(lifecycleOwner, getCameraSelector(), preview, imageCapture)
                 camera?.cameraInfo?.zoomState?.observe(lifecycleOwner, ::onZoomStateChanged)
                 setFlashMode(flashMode)
                 resetAutoFocus()

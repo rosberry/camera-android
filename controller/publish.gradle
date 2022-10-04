@@ -1,0 +1,69 @@
+android {
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+        }
+    }
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                groupId = 'com.rosberry.android'
+                artifactId = 'camera-controller'
+                version = '1.0.0'
+
+                from components.release
+
+                pom {
+                    name = 'Camera Controller'
+                    url = 'https://github.com/rosberry/camera-android'
+                    description = 'CameraX facade designed to reduce boilerplate code for simple image capture use cases'
+
+                    developers {
+                        developer {
+                            id = 'Rosberry'
+                            name = 'Rosberry'
+                        }
+                    }
+
+                    licenses {
+                        license {
+                            name = 'MIT'
+                            url = 'https://github.com/rosberry/camera-android/blob/master/LICENSE'
+                        }
+                    }
+
+                    scm {
+                        url = 'https://github.com/rosberry/camera-android'
+                        connection = 'scm:git@github.com:rosberry/camera-android.git'
+                        developerConnection = 'scm:git@github.com:rosberry/camera-android.git'
+                    }
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                def releasesUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+                def snapshotsUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+
+                url = version.endsWith("SNAPSHOT") ? snapshotsUrl : releasesUrl
+
+                credentials {
+                    username = System.env.NEXUS_USER
+                    password = System.env.NEXUS_PASSWORD
+                }
+            }
+        }
+
+        signing {
+            def signingKey = System.env.PUBLISH_KEY
+            def signingPassword = System.env.PUBLISH_KEY_PASSWORD
+
+            useInMemoryPgpKeys(signingKey, signingPassword)
+            sign publications.release
+        }
+    }
+}

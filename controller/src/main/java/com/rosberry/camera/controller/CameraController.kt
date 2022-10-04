@@ -183,6 +183,12 @@ open class CameraController(
     @MainThread
     fun stop() {
         provider?.unbindAll()
+        camera = null
+        hasFrontCamera = false
+        hasBackCamera = false
+        lifecycleOwner?.get()?.lifecycle?.removeObserver(this)
+        lifecycleOwner?.clear()
+        lifecycleOwner = null
         provider = null
     }
 

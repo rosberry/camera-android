@@ -26,8 +26,6 @@ implementation 'com.rosberry.android:camera:1.0.0'
 
 ## Usage
 
-### Initialization
-
 Initialize `CameraController` with `Context`:
 
 ```kotlin

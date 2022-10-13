@@ -3,6 +3,7 @@
     package="com.rosberry.camera.sample">
 
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <uses-feature android:name="android.hardware.camera2" />
 
@@ -11,9 +12,9 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Camera">
+        android:theme="@style/AppTheme">
 
-        <activity android:name="com.rosberry.camera.sample.ViewActivity"
+        <activity android:name="com.rosberry.camera.sample.MenuActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,5 +22,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".ControllerActivity" />
+
+        <activity android:name=".View4to3Activity" />
+
+        <activity android:name=".View16to9Activity" />
+
+        <activity android:name=".ViewFullscreenActivity" />
     </application>
 </manifest>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal|bottom"
+    android:orientation="vertical"
+    android:padding="32dp">
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnController"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Controller sample"
+        tools:ignore="HardcodedText" />
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/btn4to3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="4:3 sample"
+        tools:ignore="HardcodedText" />
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/btn16to9"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="16:9 sample"
+        tools:ignore="HardcodedText" />
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnFullscreen"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Fullscreen sample"
+        tools:ignore="HardcodedText" />
+</LinearLayout>

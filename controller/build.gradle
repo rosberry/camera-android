@@ -4,12 +4,16 @@ plugins {
 }
 
 android {
-    compileSdkVersion 31
-    buildToolsVersion "30.0.3"
+    namespace 'com.rosberry.camera.controller'
+    compileSdk 33
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 31
+        minSdk 21
+        targetSdk 31
+    }
+
+    buildFeatures {
+        buildConfig false
     }
 
     buildTypes {
@@ -30,8 +34,8 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.camera:camera-camera2:1.1.0-alpha12'
-    implementation 'androidx.camera:camera-lifecycle:1.1.0-alpha12'
-    implementation 'androidx.camera:camera-view:1.0.0-alpha32'
-    implementation 'androidx.core:core-ktx:1.7.0'
+    implementation 'androidx.camera:camera-camera2:1.2.0-beta02'
+    implementation 'androidx.camera:camera-lifecycle:1.2.0-beta02'
+    implementation 'androidx.camera:camera-view:1.2.0-beta02'
+    implementation 'androidx.core:core-ktx:1.9.0'
 }

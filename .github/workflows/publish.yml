@@ -1,0 +1,22 @@
+name: Publish Library
+on:
+  push:
+    branches:
+      - master
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      PUBLISH_KEY: ${{ secrets.PUBLISH_KEY }}
+      PUBLISH_KEY_PASSWORD: ${{ secrets.PUBLISH_KEY_PASSWORD }}
+      NEXUS_USER: ${{ secrets.NEXUS_USER }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: gradle
+      - name: Build and publish
+        run: ./gradlew controller:clean controller:build controller:publish --no-daemon

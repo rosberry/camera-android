@@ -21,7 +21,7 @@ CameraX facade designed to reduce boilerplate code for simple image capture use 
 Add a dependency
 
 ```groovy
-implementation 'com.rosberry.android:camera:1.0.0'
+implementation 'com.rosberry.android:camera-controller:1.0.0'
 ```
 
 ## Usage

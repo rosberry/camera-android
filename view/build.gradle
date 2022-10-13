@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    namespace 'com.rosberry.camera.view'
+    namespace 'com.rosberry.android.camera'
     compileSdk 33
 
     defaultConfig {
         minSdk 21
-        targetSdk 31
+        targetSdk 33
     }
 
     buildFeatures {
